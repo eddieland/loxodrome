@@ -21,28 +21,27 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-dependencies = [
-]
+dependencies = []
 
 [project.urls]
 Repository = "https://github.com/eddieland/geodist"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
-    "pytest-sugar>=1.0.0",
-    "ruff>=0.11.9",
     "codespell>=2.4.1",
-    "rich>=14.0.0",
-    "mypy>=1.14.1",
     "funlog>=0.2.1",
-    "maturin>=1.7,<1.9",
+    "maturin>=1.10,<1.11",
+    "mypy>=1.14.1",
+    "pytest-sugar>=1.0.0",
+    "pytest>=8.3.5",
+    "rich>=14.0.0",
+    "ruff>=0.11.9",
 ]
 
 # ---- Build system ----
 
 [build-system]
-requires = ["maturin>=1.7,<1.9"]
+requires = ["maturin>=1.10,<1.11"]
 build-backend = "maturin"
 
 [tool.maturin]
