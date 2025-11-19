@@ -36,6 +36,7 @@ geodist-rs/
 - New algorithms land under `algorithms/` and are selected via features; API remains stable.
 - Benchmarks and tests must use the library API to prevent drift between CLI and bindings.
 - The structure is a target, not a straitjacket: if modules grow unwieldy or a layout stops making sense, reorganize with clear rationale and update this spec to match the implemented reality.
+- Naming: the public point-to-point API is `geodesic_distance` (explicit to avoid confusion with Hausdorff or batch helpers); future algorithm-specific variants can follow the same pattern (e.g., `vincenty_distance`).
 
 ## Target Capabilities
 
