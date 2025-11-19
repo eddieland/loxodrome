@@ -73,6 +73,17 @@ impl Point {
     Ok(Self { latitude, longitude })
   }
 
+  /// Construct a point without performing validation.
+  ///
+  /// # Safety
+  ///
+  /// Caller must ensure `latitude` is within `[-90.0, 90.0]`, `longitude`
+  /// within `[-180.0, 180.0]`, and both are finite. Breaking these assumptions
+  /// can lead to incorrect downstream calculations.
+  pub const unsafe fn new_unchecked(latitude: f64, longitude: f64) -> Self {
+    Self { latitude, longitude }
+  }
+
   /// Validate the current point's coordinates.
   ///
   /// Use this when a point was constructed externally (e.g., via FFI) and
@@ -110,6 +121,16 @@ impl Distance {
   /// Raw meter value.
   pub fn meters(&self) -> f64 {
     self.meters
+  }
+
+  /// Construct a distance without performing validation.
+  ///
+  /// # Safety
+  ///
+  /// Caller must ensure `meters` is finite and non-negative. Supplying invalid
+  /// values may lead to incorrect calculations downstream.
+  pub const unsafe fn from_meters_unchecked(meters: f64) -> Self {
+    Self { meters }
   }
 }
 
@@ -173,6 +194,14 @@ mod tests {
   }
 
   #[test]
+  fn point_new_unchecked_skips_validation() {
+    let p = unsafe { Point::new_unchecked(120.0, 200.0) };
+    assert_eq!(p.latitude, 120.0);
+    assert_eq!(p.longitude, 200.0);
+    assert!(p.validate().is_err());
+  }
+
+  #[test]
   fn distance_validation_accepts_non_negative_finite() {
     let d = Distance::from_meters(1.5).unwrap();
     assert_eq!(d.meters(), 1.5);
@@ -188,5 +217,11 @@ mod tests {
         Distance::from_meters(f64::NAN),
         Err(GeodistError::InvalidDistance(v)) if v.is_nan()
     ));
+  }
+
+  #[test]
+  fn distance_unchecked_skips_validation() {
+    let d = unsafe { Distance::from_meters_unchecked(f64::NAN) };
+    assert!(d.meters().is_nan());
   }
 }
