@@ -37,7 +37,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | P0 | Design geometry wrappers and lifetime model around Rust handles. | `Point`/`LineString`/`Polygon` classes declared with slots, opaque handle storage, equality/repr/len semantics defined; `_geodist_rs.pyi` updated. | Follow pygeos immutability; document thread-safety expectations; include factory utilities. | ✅ |
 | P0 | Define operations API with typed predicates/measures and error mapping. | `ops.py` exposes functions/methods routing to kernels; consistent exceptions in `errors.py`; unit tests add shape+distance happy-paths. | Align naming/return types with Shapely where possible; ban silent coercions. | ✅ |
 | P1 | IO layer for WKT/WKB/GeoJSON and CRS metadata propagation. | `io.py` implements serializers/parsers with round-trip tests; explicit CRS argument validation and passthrough. | Prefer Rust parsing for performance; Python-side validation of inputs. | ✅ |
-| P1 | Vectorized facade and small-array fallback. | `vectorized.py` provides array-oriented wrappers with graceful fallback to Python loops; NumPy optional dependency guarded. | Benchmarks documented; matches Shapely vectorized ergonomics. | 📝 |
+| P1 | Vectorized facade and small-array fallback. | `vectorized.py` provides array-oriented wrappers with graceful fallback to Python loops; NumPy optional dependency guarded. | Benchmarks documented; matches Shapely vectorized ergonomics. | ✅ |
 | P1 | Shapely interop helpers. | Optional `interop_shapely.py` (or similar) with `to_shapely`/`from_shapely` converters; imports guarded and typed; tests skipped when shapely absent. | No mandatory shapely dependency; clear error messages when helpers used without shapely installed. | 📝 |
 | P2 | CLI and devtools alignment with new structure. | CLI uses public API only; devtools (benchmarks/fixtures) updated; no private imports. | Keep CLI optional dependency. | 📝 |
 | P3 | Extension hooks for future features (buffer, densify, nearest-neighbor). | Extension points documented; stubs with `NotImplementedError` behind feature flags. | Avoid API churn; document roadmap. | 📝 |
@@ -60,8 +60,8 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _IO layer for WKT/WKB/GeoJSON and CRS metadata propagation._
-- **Next up:** _Vectorized facade and small-array fallback._
+- **Latest completed task:** _Vectorized facade and small-array fallback._
+- **Next up:** _Shapely interop helpers._
 
 ## Lessons Learned (ongoing)
 
@@ -70,3 +70,4 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 - _Provide placeholder handle types so geometry wrappers remain importable before kernels attach real handles._
 - _Initialize kernel stubs before importing the public surface to avoid circular import issues when the extension is absent._
 - _Apply light CRS validation in Python before deferring to kernels; accept GeoJSON `crs` hints when provided._
+- _Gate NumPy fast paths so Python fallbacks stay reliable in environments without scientific stacks._
