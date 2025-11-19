@@ -29,7 +29,7 @@ The following backlog is prioritized for a single subagent (or small group) to i
 | P0 | Rust bindings shell | Optional `python` feature adds PyO3 and exports `EARTH_RADIUS_METERS` via `geodist._geodist_rs`; `cargo check` passes with and without the feature | Already merged; keep module naming stable for downstream imports | ✅ Done |
 | P0 | Build system wiring | `pygeodist/pyproject.toml` uses maturin with `manifest-path` pointing at `../geodist-rs/Cargo.toml` and enables the `python` feature; Make/uv targets documented | Align with `2025-11-19_rust-mvp-algorithm.md` references | ✅ Done |
 | P1 | Python surface | `geodist/__init__.py` re-exports the bound constant; smoke test asserts import works and value matches Rust | Keep Python namespace minimal and stable | ✅ Done |
-| P1 | Validation | `uv sync --all-extras --dev`, `maturin develop` with the `python` feature, and pytest run documented (and added to CI if feasible) | Ensure instructions work on fresh environments | 📝 Planned |
+| P1 | Validation | `uv sync --all-extras --dev`, `maturin develop` with the `python` feature, and pytest run documented (and added to CI if feasible) | Workflow documented in README; manual run confirmed via uv + maturin develop + pytest | ✅ Done |
 | P2 | Future API expansion | Follow-up spec to design kernel function exports, error mapping, and data model | Defer until kernels stabilize | ⏸️ Deferred |
 
 _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
@@ -48,10 +48,11 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** Python surface re-export plus smoke test for the bound constant.
-- **Next up:** Validation of the end-to-end Python build and test workflow.
+- **Latest completed task:** Validation of the end-to-end Python build/test workflow (`uv sync --all-extras --dev`, `uv run maturin develop`, `uv run pytest`).
+- **Next up:** Future API expansion once kernel design stabilizes (deferred to follow-on spec).
 
 ## Lessons Learned (ongoing)
 
 - PyO3 0.22 requires using `Bound<PyModule>` in the module signature for `#[pymodule]`; the older `&PyModule` form no longer exposes `add`.
 - Surface friendly import errors to remind developers to run `maturin develop` when the extension module is missing.
+- Run `uv run maturin develop` before invoking pytest so the extension module is present; maturin picks up the `python` feature from `pyproject.toml`.

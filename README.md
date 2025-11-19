@@ -64,3 +64,16 @@ stable release. Contributions, suggestions, and issue reports are welcome.
 - Set up the Python environment with `cd pygeodist && uv sync --all-extras` (or `make install` for the same effect).
 - Common Python shortcuts from `pygeodist/Makefile`: `make lint`, `make test`, `make build`, `make clean`.
 - Rust work happens under `geodist-rs`; use `cargo run` or `cargo test` there when kernels and tests are added.
+
+## Validation
+
+Validate the bootstrap Python binding end-to-end:
+
+```bash
+cd pygeodist
+uv sync --all-extras --dev
+uv run maturin develop
+uv run pytest
+```
+
+`maturin develop` uses the `python` feature declared in `pyproject.toml`; rerun after Rust changes. The equivalent Make targets are `make install`, `make develop`, and `make test`.
