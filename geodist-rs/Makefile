@@ -15,8 +15,6 @@ help: ## Display this help
 fmt: ## Format code using rustfmt
 	cargo fmt --all
 	cargo clippy --fix --allow-dirty --workspace
-	uvx ruff format examples/plugins/twig-backup || :
-	uvx ruff check --fix --select F,E,W --ignore F841 examples/plugins/twig-backup || :
 
 .PHONY: lint
 lint: ## Run clippy for linting
