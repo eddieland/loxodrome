@@ -25,6 +25,7 @@
 ## Documentation
 
 - Keep docs concise and imperative. Avoid trivial docstrings/comments, but document public APIs and non-obvious helpers once they stabilize.
+- For attributes (including module constants), annotate with Sphinx-style comments using `#: ...` so generated docs pick them up.
 - Rust: Prefer RustDoc on public items and unsafe blocks; list what arguments mean, return values, panics/errors, and any invariants or safety preconditions. Include `# Safety` when relevant.
 - Python: Use docstrings on public functions/classes/methods when behavior or contracts are non-trivial. Cover parameters (units/valid ranges), return values, raised errors, and important side effects. Skip docstrings for obvious data holders or passthroughs.
 
