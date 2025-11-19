@@ -21,10 +21,10 @@ computing applications.
 
 ## Crates & Packages
 
-| Component     | Purpose                              | Link |
-|---------------|---------------------------------------|------|
-| **geodist-rs** | Rust crate providing core algorithms | *(coming soon)* |
-| **pygeodist** | Python bindings (PyO3 + maturin)      | *(coming soon)* |
+| Component      | Purpose                               | Link            |
+|----------------|---------------------------------------|-----------------|
+| **geodist-rs** | Rust crate providing core algorithms  | *(coming soon)* |
+| **pygeodist**  | Python bindings (PyO3 + maturin)      | *(coming soon)* |
 
 ## Features (current & roadmap)
 
@@ -50,6 +50,7 @@ cargo add geodist-rs
 ```bash
 pip install pygeodist
 ```
+
 (Wheels for macOS, Linux, Windows planned.)
 
 ## Project Status
