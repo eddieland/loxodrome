@@ -92,7 +92,7 @@ packages = ["src/geodist"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["src", "tests", "devtools"]
+files = ["src", "tests"]
 color_output = true
 error_summary = true
 pretty = true

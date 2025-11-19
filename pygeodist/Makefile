@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := help
 
-SOURCE_DIRS := src tests devtools
+SOURCE_DIRS := src tests
+DOC_FILES := README.md
 
 ### Makefile
 
@@ -21,11 +22,11 @@ install: ## Install the project's dependencies with uv (**including all extras a
 ### Development
 
 .PHONY: lint
-lint: ## Run linters and formatting check
-	uv run ruff format --check $(SOURCE_DIRS)
-	uv run ruff check $(SOURCE_DIRS)
+lint: ## Run linters, formatters, and type checks
+	uv run codespell --write-changes $(SOURCE_DIRS) $(DOC_FILES)
+	uv run ruff check --fix $(SOURCE_DIRS)
+	uv run ruff format $(SOURCE_DIRS)
 	uv run mypy $(SOURCE_DIRS)
-	uv run codespell $(SOURCE_DIRS) *.md
 
 .PHONY: test
 test: ## Run tests

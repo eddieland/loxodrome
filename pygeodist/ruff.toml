@@ -48,8 +48,3 @@ docstring-code-line-length = 88    # Max line length for code blocks in docstrin
     # D107: Missing docstring in __init__
     "D107"
 ]
-# Skip docstring requirements for developer tooling scripts
-"devtools/*" = [
-    "D",    # allow missing/loose docstrings
-    "E402", # allow top-level imports after code
-]
