@@ -71,6 +71,12 @@ stable release. Contributions, suggestions, and issue reports are welcome.
 - Common Python shortcuts from `pygeodist/Makefile`: `make lint`, `make test`, `make build`, `make clean`.
 - Rust work happens under `geodist-rs`; use `cargo run` or `cargo test` there when kernels and tests are added.
 
-## Validation
+## Python Binding Validation
 
-Validate the bootstrap Python binding end-to-end via `make install`, `make develop`, and `make test` in `pygeodist/`. Under the hood these run `uv sync --all-extras --dev`, `uv run maturin develop`, and `uv run pytest` (rerun `maturin develop` after Rust changes).
+Validate the bootstrap Python binding end-to-end in `pygeodist/`:
+
+1. `make install`
+2. `make develop`
+3. `make test`
+
+Under the hood these run `uv sync --all-extras --dev`, `uv run maturin develop`, and `uv run pytest` (rerun `maturin develop` after Rust changes).
