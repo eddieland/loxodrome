@@ -5,7 +5,7 @@
 use rstar::{AABB, PointDistance, RTree, RTreeObject};
 
 use crate::algorithms::{GeodesicAlgorithm, Spherical};
-use crate::{Distance, GeodistError, Point};
+use crate::{BoundingBox, Distance, GeodistError, Point};
 
 // Keep the O(n*m) fallback for small collections where index build overhead
 // outweighs nearest-neighbor savings.
@@ -23,7 +23,7 @@ enum HausdorffStrategy {
 /// Returns the maximum, over all points in `a`, of the minimum distance to any
 /// point in `b`.
 pub fn hausdorff_directed(a: &[Point], b: &[Point]) -> Result<Distance, GeodistError> {
-  hausdorff_directed_with(&Spherical, a, b)
+  hausdorff_directed_with(&Spherical::default(), a, b)
 }
 
 /// Directed Hausdorff distance using a custom geodesic algorithm.
@@ -48,7 +48,7 @@ pub fn hausdorff_directed_with<A: GeodesicAlgorithm>(
 
 /// Symmetric Hausdorff distance between sets `a` and `b`.
 pub fn hausdorff(a: &[Point], b: &[Point]) -> Result<Distance, GeodistError> {
-  hausdorff_with(&Spherical, a, b)
+  hausdorff_with(&Spherical::default(), a, b)
 }
 
 /// Symmetric Hausdorff distance using a custom geodesic algorithm.
@@ -57,6 +57,45 @@ pub fn hausdorff_with<A: GeodesicAlgorithm>(algorithm: &A, a: &[Point], b: &[Poi
   let reverse = hausdorff_directed_with(algorithm, b, a)?;
   let meters = forward.meters().max(reverse.meters());
   Distance::from_meters(meters)
+}
+
+/// Directed Hausdorff distance after clipping both sets by a bounding box.
+pub fn hausdorff_directed_clipped(
+  a: &[Point],
+  b: &[Point],
+  bounding_box: BoundingBox,
+) -> Result<Distance, GeodistError> {
+  hausdorff_directed_clipped_with(&Spherical::default(), a, b, bounding_box)
+}
+
+/// Directed Hausdorff distance with custom algorithm after bounding box filter.
+pub fn hausdorff_directed_clipped_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Point],
+  b: &[Point],
+  bounding_box: BoundingBox,
+) -> Result<Distance, GeodistError> {
+  let filtered_a = filter_points(a, &bounding_box);
+  let filtered_b = filter_points(b, &bounding_box);
+  hausdorff_directed_with(algorithm, &filtered_a, &filtered_b)
+}
+
+/// Symmetric Hausdorff distance after clipping both sets by a bounding box.
+pub fn hausdorff_clipped(a: &[Point], b: &[Point], bounding_box: BoundingBox) -> Result<Distance, GeodistError> {
+  hausdorff_clipped_with(&Spherical::default(), a, b, bounding_box)
+}
+
+/// Symmetric Hausdorff distance with custom algorithm after bounding box
+/// filter.
+pub fn hausdorff_clipped_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Point],
+  b: &[Point],
+  bounding_box: BoundingBox,
+) -> Result<Distance, GeodistError> {
+  let filtered_a = filter_points(a, &bounding_box);
+  let filtered_b = filter_points(b, &bounding_box);
+  hausdorff_with(algorithm, &filtered_a, &filtered_b)
 }
 
 fn ensure_non_empty(points: &[Point]) -> Result<(), GeodistError> {
@@ -71,6 +110,14 @@ fn validate_points(points: &[Point]) -> Result<(), GeodistError> {
     point.validate()?;
   }
   Ok(())
+}
+
+fn filter_points(points: &[Point], bounding_box: &BoundingBox) -> Vec<Point> {
+  points
+    .iter()
+    .copied()
+    .filter(|point| bounding_box.contains(point))
+    .collect()
 }
 
 fn choose_strategy(a_len: usize, b_len: usize) -> HausdorffStrategy {
@@ -249,5 +296,24 @@ mod tests {
     assert!(should_use_naive(10, 100));
     assert!(should_use_naive(60, 60));
     assert!(!should_use_naive(70, 70));
+  }
+
+  #[test]
+  fn clips_points_before_distance() {
+    let inside = Point::new(0.0, 0.0).unwrap();
+    let outside = Point::new(50.0, 50.0).unwrap();
+    let bounding_box = BoundingBox::new(-1.0, 1.0, -1.0, 1.0).unwrap();
+
+    let distance = hausdorff_clipped(&[inside, outside], &[inside], bounding_box).unwrap();
+    assert_eq!(distance.meters(), 0.0);
+  }
+
+  #[test]
+  fn clipped_variants_error_when_filter_removes_all_points() {
+    let point = Point::new(10.0, 10.0).unwrap();
+    let bounding_box = BoundingBox::new(-1.0, 1.0, -1.0, 1.0).unwrap();
+
+    let result = hausdorff_clipped(&[point], &[point], bounding_box);
+    assert!(matches!(result, Err(GeodistError::EmptyPointSet)));
   }
 }

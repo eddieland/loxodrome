@@ -23,6 +23,19 @@ pub enum GeodistError {
   InvalidLongitude(f64),
   /// Distances must be finite and non-negative.
   InvalidDistance(f64),
+  /// Radii must be finite and strictly positive.
+  InvalidRadius(f64),
+  /// Ellipsoid axes must be finite, positive, and ordered (semi-major >=
+  /// semi-minor).
+  InvalidEllipsoid { semi_major: f64, semi_minor: f64 },
+  /// Bounding boxes must have ordered corners within valid latitude/longitude
+  /// ranges.
+  InvalidBoundingBox {
+    min_latitude: f64,
+    max_latitude: f64,
+    min_longitude: f64,
+    max_longitude: f64,
+  },
   /// Point sets must be non-empty for Hausdorff distance.
   EmptyPointSet,
 }
@@ -36,9 +49,21 @@ impl fmt::Display for GeodistError {
       Self::InvalidLongitude(value) => {
         write!(f, "invalid longitude {value}; expected finite degrees in [-180, 180]")
       }
-      Self::InvalidDistance(value) => {
-        write!(f, "invalid distance {value}; expected finite meters >= 0")
-      }
+      Self::InvalidDistance(value) => write!(f, "invalid distance {value}; expected finite meters >= 0"),
+      Self::InvalidRadius(value) => write!(f, "invalid radius {value}; expected finite meters > 0"),
+      Self::InvalidEllipsoid { semi_major, semi_minor } => write!(
+        f,
+        "invalid ellipsoid axes a={semi_major}, b={semi_minor}; expected finite meters with a >= b > 0"
+      ),
+      Self::InvalidBoundingBox {
+        min_latitude,
+        max_latitude,
+        min_longitude,
+        max_longitude,
+      } => write!(
+        f,
+        "invalid bounding box [{min_latitude}, {max_latitude}] x [{min_longitude}, {max_longitude}]; expected ordered finite degrees"
+      ),
       Self::EmptyPointSet => write!(f, "point sets must be non-empty"),
     }
   }
@@ -134,6 +159,96 @@ impl Distance {
   }
 }
 
+/// Oblate ellipsoid definition (semi-major/semi-minor axes).
+///
+/// Used to derive an equivalent mean radius for spherical approximations.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
+pub struct Ellipsoid {
+  /// Semi-major axis (equatorial radius) in meters, must be >= semi-minor.
+  pub semi_major_axis_meters: f64,
+  /// Semi-minor axis (polar radius) in meters.
+  pub semi_minor_axis_meters: f64,
+}
+
+impl Ellipsoid {
+  /// Construct a validated ellipsoid.
+  pub fn new(semi_major_axis_meters: f64, semi_minor_axis_meters: f64) -> Result<Self, GeodistError> {
+    validate_ellipsoid(semi_major_axis_meters, semi_minor_axis_meters)?;
+    Ok(Self {
+      semi_major_axis_meters,
+      semi_minor_axis_meters,
+    })
+  }
+
+  /// WGS84 ellipsoid parameters in meters.
+  pub fn wgs84() -> Self {
+    Self {
+      semi_major_axis_meters: crate::constants::WGS84_SEMI_MAJOR_METERS,
+      semi_minor_axis_meters: crate::constants::WGS84_SEMI_MINOR_METERS,
+    }
+  }
+
+  /// Mean radius derived from the ellipsoid (2a + b) / 3.
+  pub fn mean_radius(&self) -> Result<f64, GeodistError> {
+    validate_ellipsoid(self.semi_major_axis_meters, self.semi_minor_axis_meters)?;
+    Ok((2.0 * self.semi_major_axis_meters + self.semi_minor_axis_meters) / 3.0)
+  }
+}
+
+/// Geographic bounding box used to filter point sets.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
+pub struct BoundingBox {
+  /// Minimum latitude in degrees.
+  pub min_latitude: f64,
+  /// Maximum latitude in degrees.
+  pub max_latitude: f64,
+  /// Minimum longitude in degrees.
+  pub min_longitude: f64,
+  /// Maximum longitude in degrees.
+  pub max_longitude: f64,
+}
+
+impl BoundingBox {
+  /// Construct a bounding box ensuring ordered corners inside valid ranges.
+  pub fn new(
+    min_latitude: f64,
+    max_latitude: f64,
+    min_longitude: f64,
+    max_longitude: f64,
+  ) -> Result<Self, GeodistError> {
+    validate_latitude(min_latitude)?;
+    validate_latitude(max_latitude)?;
+    validate_longitude(min_longitude)?;
+    validate_longitude(max_longitude)?;
+
+    if min_latitude > max_latitude || min_longitude > max_longitude {
+      return Err(GeodistError::InvalidBoundingBox {
+        min_latitude,
+        max_latitude,
+        min_longitude,
+        max_longitude,
+      });
+    }
+
+    Ok(Self {
+      min_latitude,
+      max_latitude,
+      min_longitude,
+      max_longitude,
+    })
+  }
+
+  /// Check whether a point lies inside the box (inclusive of edges).
+  pub fn contains(&self, point: &Point) -> bool {
+    point.latitude >= self.min_latitude
+      && point.latitude <= self.max_latitude
+      && point.longitude >= self.min_longitude
+      && point.longitude <= self.max_longitude
+  }
+}
+
 /// Validate that latitude is finite and inside `[-90, 90]` degrees.
 fn validate_latitude(value: f64) -> Result<(), GeodistError> {
   if !value.is_finite() || !(MIN_LAT_DEGREES..=MAX_LAT_DEGREES).contains(&value) {
@@ -154,6 +269,24 @@ fn validate_longitude(value: f64) -> Result<(), GeodistError> {
 fn validate_distance(value: f64) -> Result<(), GeodistError> {
   if !value.is_finite() || value < 0.0 {
     return Err(GeodistError::InvalidDistance(value));
+  }
+  Ok(())
+}
+
+/// Validate a radius used for spherical approximations.
+fn validate_radius(value: f64) -> Result<(), GeodistError> {
+  if !value.is_finite() || value <= 0.0 {
+    return Err(GeodistError::InvalidRadius(value));
+  }
+  Ok(())
+}
+
+/// Validate ellipsoid axes ordering and positivity.
+fn validate_ellipsoid(semi_major: f64, semi_minor: f64) -> Result<(), GeodistError> {
+  validate_radius(semi_major)?;
+  validate_radius(semi_minor)?;
+  if semi_major < semi_minor {
+    return Err(GeodistError::InvalidEllipsoid { semi_major, semi_minor });
   }
   Ok(())
 }
@@ -223,5 +356,47 @@ mod tests {
   fn distance_unchecked_skips_validation() {
     let d = unsafe { Distance::from_meters_unchecked(f64::NAN) };
     assert!(d.meters().is_nan());
+  }
+
+  #[test]
+  fn ellipsoid_mean_radius_is_positive() {
+    let ellipsoid = Ellipsoid::wgs84();
+    let radius = ellipsoid.mean_radius().unwrap();
+    assert!(radius > 6_300_000.0);
+  }
+
+  #[test]
+  fn ellipsoid_rejects_inverted_axes() {
+    let result = Ellipsoid::new(6_300_000.0, 7_000_000.0);
+    assert!(matches!(
+      result,
+      Err(GeodistError::InvalidEllipsoid {
+        semi_major: 6_300_000.0,
+        semi_minor: 7_000_000.0
+      })
+    ));
+  }
+
+  #[test]
+  fn bounding_box_accepts_ordered_ranges() {
+    let bbox = BoundingBox::new(-1.0, 1.0, -2.0, 2.0).unwrap();
+    let inside = Point::new(0.0, 0.0).unwrap();
+    let outside = Point::new(10.0, 0.0).unwrap();
+    assert!(bbox.contains(&inside));
+    assert!(!bbox.contains(&outside));
+  }
+
+  #[test]
+  fn bounding_box_rejects_unordered_ranges() {
+    let result = BoundingBox::new(1.0, -1.0, 0.0, 1.0);
+    assert!(matches!(
+      result,
+      Err(GeodistError::InvalidBoundingBox {
+        min_latitude: 1.0,
+        max_latitude: -1.0,
+        min_longitude: 0.0,
+        max_longitude: 1.0,
+      })
+    ));
   }
 }

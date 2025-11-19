@@ -60,7 +60,7 @@ geodist-rs/
 | P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | ✅ Done |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | ✅ Done |
 | P1 | Spatial index acceleration | Make `rstar`-backed nearest-neighbor search the default fast path for Hausdorff on large sets; keep a pure O(n*m) fallback for tiny inputs/tests | `rstar` becomes a baseline dependency; document when we fall back to the naive path | ✅ Done |
-| P3 | Extended geodesic options | Optional ellipsoid selection, bearing output, and filtered/Hausdorff variants (e.g., clipped by bbox) | Only wire shapes; implementation can follow later | 📝 Planned |
+| P3 | Extended geodesic options | Optional ellipsoid selection, bearing output, and filtered/Hausdorff variants (e.g., clipped by bbox) | Only wire shapes; implementation can follow later | ✅ Done |
 
 ### Risks & Mitigations
 
@@ -81,8 +81,8 @@ geodist-rs/
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _Spatial index acceleration_
-- **Next up:** _Extended geodesic options_
+- **Latest completed task:** _Extended geodesic options_
+- **Next up:** _TBD (backlog complete for now)_
 
 ## Lessons Learned (ongoing)
 
@@ -90,3 +90,4 @@ geodist-rs/
 - PyO3 module compiles cleanly behind the `python` feature when using the 0.22 `Bound<PyModule>` signature.
 - Strategy trait keeps the public API stable while letting Hausdorff and batch helpers swap algorithms without call-site churn.
 - Hausdorff uses an `rstar` nearest-neighbor path for larger sets and falls back to the O(n*m) loop for tiny inputs to avoid index build overhead.
+- Mean-radius ellipsoid support keeps spherical math stable while allowing bearings and clipped Hausdorff variants to share the existing kernel.

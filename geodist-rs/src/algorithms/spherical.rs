@@ -3,20 +3,50 @@
 //! Inputs are degrees; output is meters.
 
 use super::GeodesicAlgorithm;
-use crate::constants::EARTH_RADIUS_METERS;
-use crate::{Distance, GeodistError, Point};
+use crate::{Distance, EARTH_RADIUS_METERS, Ellipsoid, GeodistError, Point};
 
 /// Baseline spherical algorithm.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Spherical;
+#[derive(Debug, Clone, Copy)]
+pub struct Spherical {
+  radius_meters: f64,
+}
 
-impl GeodesicAlgorithm for Spherical {
-  fn geodesic_distance(&self, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
-    spherical_distance(p1, p2)
+impl Default for Spherical {
+  fn default() -> Self {
+    Self {
+      radius_meters: EARTH_RADIUS_METERS,
+    }
   }
 }
 
-fn spherical_distance(p1: Point, p2: Point) -> Result<Distance, GeodistError> {
+impl Spherical {
+  /// Construct a spherical strategy with a custom radius.
+  pub fn with_radius(radius_meters: f64) -> Result<Self, GeodistError> {
+    if !radius_meters.is_finite() || radius_meters <= 0.0 {
+      return Err(GeodistError::InvalidRadius(radius_meters));
+    }
+    Ok(Self { radius_meters })
+  }
+
+  /// Construct a spherical strategy using the mean radius of an ellipsoid.
+  pub fn from_ellipsoid(ellipsoid: Ellipsoid) -> Result<Self, GeodistError> {
+    let radius_meters = ellipsoid.mean_radius()?;
+    Self::with_radius(radius_meters)
+  }
+
+  /// Radius used by the strategy (meters).
+  pub fn radius_meters(&self) -> f64 {
+    self.radius_meters
+  }
+}
+
+impl GeodesicAlgorithm for Spherical {
+  fn geodesic_distance(&self, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
+    spherical_distance(self.radius_meters, p1, p2)
+  }
+}
+
+pub(crate) fn spherical_distance(radius_meters: f64, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   p1.validate()?;
   p2.validate()?;
 
@@ -34,7 +64,7 @@ fn spherical_distance(p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   let normalized_a = a.clamp(0.0, 1.0);
   let c = 2.0 * normalized_a.sqrt().atan2((1.0 - normalized_a).sqrt());
 
-  let meters = EARTH_RADIUS_METERS * c;
+  let meters = radius_meters * c;
   Distance::from_meters(meters)
 }
 
@@ -47,7 +77,7 @@ mod tests {
     let origin = Point::new(0.0, 0.0).unwrap();
     let east = Point::new(0.0, 1.0).unwrap();
 
-    let meters = Spherical.geodesic_distance(origin, east).unwrap().meters();
+    let meters = Spherical::default().geodesic_distance(origin, east).unwrap().meters();
     let expected = 111_195.080_233_532_9;
     assert!((meters - expected).abs() < 1e-6);
   }
@@ -59,7 +89,26 @@ mod tests {
       longitude: 0.0,
     };
     let valid = Point::new(0.0, 0.0).unwrap();
-    let result = Spherical.geodesic_distance(invalid, valid);
+    let result = Spherical::default().geodesic_distance(invalid, valid);
     assert!(matches!(result, Err(GeodistError::InvalidLatitude(200.0))));
+  }
+
+  #[test]
+  fn accepts_custom_radius() {
+    let origin = Point::new(0.0, 0.0).unwrap();
+    let east = Point::new(0.0, 1.0).unwrap();
+    let strategy = Spherical::with_radius(EARTH_RADIUS_METERS * 2.0).unwrap();
+
+    let doubled = strategy.geodesic_distance(origin, east).unwrap().meters();
+    let baseline = Spherical::default().geodesic_distance(origin, east).unwrap().meters();
+
+    assert!((doubled - baseline * 2.0).abs() < 1e-6);
+  }
+
+  #[test]
+  fn constructs_from_ellipsoid() {
+    let ellipsoid = Ellipsoid::wgs84();
+    let strategy = Spherical::from_ellipsoid(ellipsoid).unwrap();
+    assert!(strategy.radius_meters() > 6_300_000.0);
   }
 }
