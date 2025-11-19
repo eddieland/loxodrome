@@ -73,13 +73,4 @@ stable release. Contributions, suggestions, and issue reports are welcome.
 
 ## Validation
 
-Validate the bootstrap Python binding end-to-end:
-
-```bash
-cd pygeodist
-uv sync --all-extras --dev
-uv run maturin develop
-uv run pytest
-```
-
-`maturin develop` uses the `python` feature declared in `pyproject.toml`; rerun after Rust changes. The equivalent Make targets are `make install`, `make develop`, and `make test`.
+Validate the bootstrap Python binding end-to-end via `make install`, `make develop`, and `make test` in `pygeodist/`. Under the hood these run `uv sync --all-extras --dev`, `uv run maturin develop`, and `uv run pytest` (rerun `maturin develop` after Rust changes).
