@@ -14,6 +14,9 @@ help: ## Display this help
 
 ### Aggregate
 
+.PHONY: all
+all: fmt lint test build ## Run formatting, linting, tests, and builds for all projects
+
 .PHONY: lint
 lint: lint-python lint-rust ## Run linting for Python and Rust projects
 
@@ -22,6 +25,9 @@ fmt: fmt-python fmt-rust ## Format Python and Rust code
 
 .PHONY: test
 test: test-python test-rust ## Run tests for Python and Rust projects
+
+.PHONY: build
+build: build-python build-rust ## Build Python and Rust projects
 
 ### Python
 
@@ -37,6 +43,10 @@ fmt-python: ## Format Python code
 test-python: ## Run Python tests
 	$(MAKE) -C $(PY_DIR) test
 
+.PHONY: build-python
+build-python: ## Build Python artifacts
+	$(MAKE) -C $(PY_DIR) build
+
 ### Rust
 
 .PHONY: lint-rust
@@ -50,6 +60,10 @@ fmt-rust: ## Format Rust code
 .PHONY: test-rust
 test-rust: ## Run Rust tests
 	$(MAKE) -C $(RS_DIR) test
+
+.PHONY: build-rust
+build-rust: ## Build Rust artifacts
+	$(MAKE) -C $(RS_DIR) build
 
 ### Analysis
 
