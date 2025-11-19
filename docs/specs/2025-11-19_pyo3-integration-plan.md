@@ -1,5 +1,7 @@
 # PyO3 Integration Plan (Bootstrap)
 
+**Status:** ✅ Done (bootstrap delivered; future API expansion deferred to follow-up spec)
+
 ## Purpose
 
 - Introduce PyO3 as the Rust↔Python bridge for an initial binding.
@@ -49,7 +51,7 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 ## Status Tracking (to be updated by subagent)
 
 - **Latest completed task:** Validation of the end-to-end Python build/test workflow (`uv sync --all-extras --dev`, `uv run maturin develop`, `uv run pytest`).
-- **Next up:** Future API expansion once kernel design stabilizes (deferred to follow-on spec).
+- **Overall spec state:** Done; kernels and API growth shift to the follow-on expansion spec.
 
 ## Lessons Learned (ongoing)
 
