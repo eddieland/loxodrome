@@ -23,6 +23,9 @@ classifiers = [
 
 dependencies = []
 
+[project.scripts]
+geodist = "geodist.cli:app"
+
 [project.urls]
 Repository = "https://github.com/eddieland/geodist"
 
@@ -36,6 +39,7 @@ dev = [
     "pytest>=8.3.5",
     "rich>=14.0.0",
     "ruff>=0.11.9",
+    "typer>=0.15.0",
 ]
 
 # ---- Build system ----
