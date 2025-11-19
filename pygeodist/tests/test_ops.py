@@ -76,8 +76,8 @@ def test_centroid_wraps_handle(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert isinstance(centroid, Point)
     assert centroid.crs == 4326
-    assert isinstance(centroid._handle, _DummyHandle)  # type: ignore[attr-defined]
-    assert centroid._handle.value == 3.0  # type: ignore[attr-defined]
+    assert isinstance(centroid._handle, _DummyHandle)
+    assert centroid._handle.value == 3.0
 
 
 def test_buffer_returns_geometry_wrapped_handle(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -91,8 +91,8 @@ def test_buffer_returns_geometry_wrapped_handle(monkeypatch: pytest.MonkeyPatch)
 
     assert isinstance(buffered, Geometry)
     assert buffered.crs == "EPSG:3857"
-    assert isinstance(buffered._handle, _DummyHandle)  # type: ignore[attr-defined]
-    assert buffered._handle.value == 3.0  # type: ignore[attr-defined]
+    assert isinstance(buffered._handle, _DummyHandle)
+    assert buffered._handle.value == 3.0
 
 
 def test_invalid_inputs_raise_consistent_errors(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -100,7 +100,7 @@ def test_invalid_inputs_raise_consistent_errors(monkeypatch: pytest.MonkeyPatch)
     geometry = _point_with_handle(1.0)
 
     with pytest.raises(GeometryTypeError):
-        ops.distance(object(), geometry)
+        ops.distance(object(), geometry)  # type: ignore[arg-type]
 
     with pytest.raises(CRSValidationError):
         ops.distance(geometry, geometry, crs=object())  # type: ignore[arg-type]

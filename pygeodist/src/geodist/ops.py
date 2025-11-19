@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from . import _geodist_rs
 from .errors import (
@@ -18,8 +18,7 @@ from .types import CRSLike, GeometryHandle
 
 @runtime_checkable
 class _KernelCallable(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        ...
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
 
 
 def _validate_crs(crs: CRSLike) -> CRSLike:
