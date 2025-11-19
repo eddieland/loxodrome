@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, Sized
 
 # Coordinate representations follow Shapely/pygeos conventions to ease interop.
 Coordinate = tuple[float, float]
 CoordinateSequence = Sequence[Coordinate]
+
+# Opaque handle returned by the compiled Rust extension; must at least be Sized.
+GeometryHandle = Sized
 
 # Coordinate reference systems may be stored as EPSG integers or authority strings.
 CRSLike = int | str | None
@@ -23,5 +26,6 @@ __all__ = (
     "CoordinateSequence",
     "CRSLike",
     "GeoJSONLike",
+    "GeometryHandle",
     "PathLike",
 )

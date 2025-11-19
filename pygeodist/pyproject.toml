@@ -21,7 +21,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-dependencies = []
+dependencies = [
+    "typing-extensions>=4.12.2",
+]
 
 [project.scripts]
 geodist = "geodist.cli:app"

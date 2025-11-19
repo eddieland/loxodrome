@@ -34,7 +34,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | Finalize package module skeleton (`geodist/geometry.py`, `ops.py`, `io.py`, `vectorized.py`, `errors.py`, `types.py`) and re-export width under `geodist/__init__.py`. | Files exist with placeholder classes/functions, layered imports, and docstrings describing contracts. | Mirror Shapely public surface where sensible; keep `_geodist_rs` private. | ✅ |
-| P0 | Design geometry wrappers and lifetime model around Rust handles. | `Point`/`LineString`/`Polygon` classes declared with slots, opaque handle storage, equality/repr/len semantics defined; `_geodist_rs.pyi` updated. | Follow pygeos immutability; document thread-safety expectations; include factory utilities. | 📝 |
+| P0 | Design geometry wrappers and lifetime model around Rust handles. | `Point`/`LineString`/`Polygon` classes declared with slots, opaque handle storage, equality/repr/len semantics defined; `_geodist_rs.pyi` updated. | Follow pygeos immutability; document thread-safety expectations; include factory utilities. | ✅ |
 | P0 | Define operations API with typed predicates/measures and error mapping. | `ops.py` exposes functions/methods routing to kernels; consistent exceptions in `errors.py`; unit tests add shape+distance happy-paths. | Align naming/return types with Shapely where possible; ban silent coercions. | 📝 |
 | P1 | IO layer for WKT/WKB/GeoJSON and CRS metadata propagation. | `io.py` implements serializers/parsers with round-trip tests; explicit CRS argument validation and passthrough. | Prefer Rust parsing for performance; Python-side validation of inputs. | 📝 |
 | P1 | Vectorized facade and small-array fallback. | `vectorized.py` provides array-oriented wrappers with graceful fallback to Python loops; NumPy optional dependency guarded. | Benchmarks documented; matches Shapely vectorized ergonomics. | 📝 |
@@ -60,10 +60,11 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _Package module skeleton with staged placeholders and exports._
-- **Next up:** _Design geometry wrappers and lifetime model around Rust handles._
+- **Latest completed task:** _Design geometry wrappers and lifetime model around Rust handles._
+- **Next up:** _Define operations API with typed predicates/measures and error mapping._
 
 ## Lessons Learned (ongoing)
 
 - _Document gaps between Rust kernel capabilities and Python-facing expectations early to avoid API rework._
 - _Raise explicit KernelUnavailableError stubs so imports succeed while keeping missing kernels visible during early scaffolding._
+- _Provide placeholder handle types so geometry wrappers remain importable before kernels attach real handles._
