@@ -54,7 +54,7 @@ geodist-rs/
 | P0 | Define core types (`Point`, `Distance`, error enum) and input validation | Types live in `geodist-rs/src/types.rs`, re-exported from `lib.rs`; invalid inputs return errors; degrees documented | Keep types FFI-friendly; include doc comments | Done |
 | P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | Done |
 | P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | Done |
-| P0 | Add batch helper (`distances_many`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | |
+| P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | Done |
 | P1 | Minimal Python binding surface | Expose distance and Hausdorff functions via `pyo3` or `ffi` scaffold with smoke tests in `pygeodist/tests` | Aim for parity with Rust API naming; skip perf tuning | |
 | P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | |
@@ -78,9 +78,9 @@ geodist-rs/
 
 ## Status Tracking (to be updated by subagent)
 
-- **Current focus:** _Add batch helper_
-- **Latest completed task:** _Move core types into dedicated module (`types.rs`)_
-- **Next up:** _Minimal Python binding surface_
+- **Current focus:** _Minimal Python binding surface_
+- **Latest completed task:** _Add batch helper_
+- **Next up:** _Benchmark harness stub_
 
 ## Lessons Learned (ongoing)
 

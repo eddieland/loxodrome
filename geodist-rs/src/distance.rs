@@ -32,6 +32,18 @@ pub fn geodesic_distance(p1: Point, p2: Point) -> Result<Distance, GeodistError>
   Distance::from_meters(meters)
 }
 
+/// Compute geodesic distances for many point pairs in a single call.
+///
+/// Accepts a slice of `(origin, destination)` tuples and returns a `Vec` of
+/// meter distances in the same order. Validation is performed for every point;
+/// the first invalid coordinate returns an error and short-circuits.
+pub fn geodesic_distances(pairs: &[(Point, Point)]) -> Result<Vec<f64>, GeodistError> {
+  pairs
+    .iter()
+    .map(|(a, b)| geodesic_distance(*a, *b).map(|d| d.meters()))
+    .collect()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -71,5 +83,35 @@ mod tests {
     let point = Point::new(10.0, 20.0).unwrap();
     let meters = geodesic_distance(point, point).unwrap().meters();
     assert_eq!(meters, 0.0);
+  }
+
+  #[test]
+  fn computes_batch_distances_in_order() {
+    let pairs = [
+      (Point::new(0.0, 0.0).unwrap(), Point::new(0.0, 1.0).unwrap()),
+      (Point::new(0.0, 0.0).unwrap(), Point::new(1.0, 0.0).unwrap()),
+    ];
+
+    let results = geodesic_distances(&pairs).unwrap();
+    assert_eq!(results.len(), 2);
+
+    let expected_first = geodesic_distance(pairs[0].0, pairs[0].1).unwrap().meters();
+    let expected_second = geodesic_distance(pairs[1].0, pairs[1].1).unwrap().meters();
+
+    assert!((results[0] - expected_first).abs() < 1e-9);
+    assert!((results[1] - expected_second).abs() < 1e-9);
+  }
+
+  #[test]
+  fn propagates_validation_error() {
+    let valid = Point::new(0.0, 0.0).unwrap();
+    let invalid = Point {
+      latitude: 95.0,
+      longitude: 0.0,
+    };
+    let pairs = [(valid, valid), (invalid, valid)];
+
+    let result = geodesic_distances(&pairs);
+    assert!(matches!(result, Err(GeodistError::InvalidLatitude(95.0))));
   }
 }
