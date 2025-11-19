@@ -10,8 +10,10 @@
 use std::fmt;
 
 mod distance;
+mod hausdorff;
 
 pub use distance::{geodesic_distance, EARTH_RADIUS_METERS};
+pub use hausdorff::{hausdorff, hausdorff_directed};
 
 /// Error type for invalid input or derived values.
 ///
@@ -25,6 +27,8 @@ pub enum GeodistError {
   InvalidLongitude(f64),
   /// Distances must be finite and non-negative.
   InvalidDistance(f64),
+  /// Point sets must be non-empty for Hausdorff distance.
+  EmptyPointSet,
 }
 
 impl fmt::Display for GeodistError {
@@ -39,6 +43,7 @@ impl fmt::Display for GeodistError {
       Self::InvalidDistance(value) => {
         write!(f, "invalid distance {value}; expected finite meters >= 0")
       }
+      Self::EmptyPointSet => write!(f, "point sets must be non-empty"),
     }
   }
 }
