@@ -2,12 +2,11 @@
 //!
 //! Inputs are degrees; output is meters.
 
+use crate::constants::EARTH_RADIUS_METERS;
 use crate::{Distance, GeodistError, Point};
 
-/// Mean radius of Earth in meters (WGS84).
-pub const EARTH_RADIUS_METERS: f64 = 6_371_008.8;
-
-/// Compute great-circle (geodesic) distance between two geographic points in degrees.
+/// Compute great-circle (geodesic) distance between two geographic points in
+/// degrees.
 ///
 /// Returns a validated [`Distance`] in meters. Inputs are validated before
 /// calculations.

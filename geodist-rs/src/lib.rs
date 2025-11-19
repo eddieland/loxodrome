@@ -9,11 +9,15 @@
 
 use std::fmt;
 
+mod constants;
 mod distance;
 mod hausdorff;
 
-pub use distance::{geodesic_distance, EARTH_RADIUS_METERS};
+pub use constants::EARTH_RADIUS_METERS;
+pub use distance::geodesic_distance;
 pub use hausdorff::{hausdorff, hausdorff_directed};
+
+use crate::constants::{MAX_LAT_DEGREES, MAX_LON_DEGREES, MIN_LAT_DEGREES, MIN_LON_DEGREES};
 
 /// Error type for invalid input or derived values.
 ///
@@ -116,11 +120,6 @@ impl Distance {
     self.meters
   }
 }
-
-const MIN_LAT_DEGREES: f64 = -90.0;
-const MAX_LAT_DEGREES: f64 = 90.0;
-const MIN_LON_DEGREES: f64 = -180.0;
-const MAX_LON_DEGREES: f64 = 180.0;
 
 /// Validate that latitude is finite and inside `[-90, 90]` degrees.
 fn validate_latitude(value: f64) -> Result<(), GeodistError> {

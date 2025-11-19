@@ -2,7 +2,7 @@
 //!
 //! Inputs are degrees; output is meters.
 
-use crate::{geodesic_distance, Distance, GeodistError, Point};
+use crate::{Distance, GeodistError, Point, geodesic_distance};
 
 /// Directed Hausdorff distance from set `a` to set `b`.
 ///
@@ -83,10 +83,7 @@ mod tests {
       hausdorff_directed(&[], &[point]),
       Err(GeodistError::EmptyPointSet)
     ));
-    assert!(matches!(
-      hausdorff(&[point], &[]),
-      Err(GeodistError::EmptyPointSet)
-    ));
+    assert!(matches!(hausdorff(&[point], &[]), Err(GeodistError::EmptyPointSet)));
   }
 
   #[test]

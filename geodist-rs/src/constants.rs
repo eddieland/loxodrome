@@ -1,0 +1,16 @@
+//! Shared constants for geographic kernels and validation.
+//!
+//! Values are kept in one place to preserve consistency across calculations
+//! and future bindings.
+
+/// Mean radius of Earth in meters (WGS84).
+pub const EARTH_RADIUS_METERS: f64 = 6_371_008.8;
+
+/// Minimum allowed latitude in degrees.
+pub(crate) const MIN_LAT_DEGREES: f64 = -90.0;
+/// Maximum allowed latitude in degrees.
+pub(crate) const MAX_LAT_DEGREES: f64 = 90.0;
+/// Minimum allowed longitude in degrees.
+pub(crate) const MIN_LON_DEGREES: f64 = -180.0;
+/// Maximum allowed longitude in degrees.
+pub(crate) const MAX_LON_DEGREES: f64 = 180.0;
