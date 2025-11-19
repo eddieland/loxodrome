@@ -39,4 +39,4 @@
 ## Security & Configuration Tips
 
 - No secrets should ever be committed; prefer env vars for credentials in future data-dependent benchmarks.
-- Respect pinned toolchains: Python 3.11+ (per `pyproject.toml`) and Rust toolchain in `rust-toolchain.toml`. If tooling versions change, update pins and mention in PR notes.
+- Respect pinned toolchains: Python 3.10+ (per `pyproject.toml`) and Rust toolchain in `rust-toolchain.toml`. If tooling versions change, update pins and mention in PR notes.
