@@ -23,13 +23,15 @@ The following backlog is prioritized for a single subagent (or small group) to i
 
 ### Task Backlog
 
+Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ deferred).
+
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | {{Highest-priority task description.}} | {{Objective criteria for completion.}} | {{Links, clarifications, or blockers.}} | {{Leave blank until updated.}} |
-| P0 | {{Next critical task.}} | {{Definition of done.}} | {{Supporting context.}} | {{Status placeholder.}} |
-| P1 | {{Subsequent task.}} | {{DoD details.}} | {{Additional notes.}} | {{Status placeholder.}} |
-| P2 | {{Longer-term or stretch task.}} | {{DoD details.}} | {{Additional notes.}} | {{Status placeholder.}} |
-| P3 | {{Nice-to-have or future consideration.}} | {{DoD details.}} | {{Additional notes.}} | {{Status placeholder.}} |
+| P0 | {{Highest-priority task description.}} | {{Objective criteria for completion.}} | {{Links, clarifications, or blockers.}} | {{Status emoji.}} |
+| P0 | {{Next critical task.}} | {{Definition of done.}} | {{Supporting context.}} | {{Status emoji.}} |
+| P1 | {{Subsequent task.}} | {{DoD details.}} | {{Additional notes.}} | {{Status emoji.}} |
+| P2 | {{Longer-term or stretch task.}} | {{DoD details.}} | {{Additional notes.}} | {{Status emoji.}} |
+| P3 | {{Nice-to-have or future consideration.}} | {{DoD details.}} | {{Additional notes.}} | {{Status emoji.}} |
 
 _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
@@ -47,7 +49,6 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Current focus:** _{{What is actively being worked on?}}_
 - **Latest completed task:** _{{Most recently finished backlog item.}}_
 - **Next up:** _{{Upcoming priority task.}}_
 

@@ -26,11 +26,11 @@ The following backlog is prioritized for a single subagent (or small group) to i
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Rust bindings shell | Optional `python` feature adds PyO3 and exports `EARTH_RADIUS_METERS` via `geodist._geodist_rs`; `cargo check` passes with and without the feature | Already merged; keep module naming stable for downstream imports | Done |
-| P0 | Build system wiring | `pygeodist/pyproject.toml` uses maturin with `manifest-path` pointing at `../geodist-rs/Cargo.toml` and enables the `python` feature; Make/uv targets documented | Align with `2025-11-19_rust-mvp-algorithm.md` references | Planned |
-| P1 | Python surface | `geodist/__init__.py` re-exports the bound constant; smoke test asserts import works and value matches Rust | Keep Python namespace minimal and stable | Planned |
-| P1 | Validation | `uv sync --all-extras --dev`, `maturin develop` with the `python` feature, and pytest run documented (and added to CI if feasible) | Ensure instructions work on fresh environments | Planned |
-| P2 | Future API expansion | Follow-up spec to design kernel function exports, error mapping, and data model | Defer until kernels stabilize | Deferred |
+| P0 | Rust bindings shell | Optional `python` feature adds PyO3 and exports `EARTH_RADIUS_METERS` via `geodist._geodist_rs`; `cargo check` passes with and without the feature | Already merged; keep module naming stable for downstream imports | ✅ Done |
+| P0 | Build system wiring | `pygeodist/pyproject.toml` uses maturin with `manifest-path` pointing at `../geodist-rs/Cargo.toml` and enables the `python` feature; Make/uv targets documented | Align with `2025-11-19_rust-mvp-algorithm.md` references | 📝 Planned |
+| P1 | Python surface | `geodist/__init__.py` re-exports the bound constant; smoke test asserts import works and value matches Rust | Keep Python namespace minimal and stable | 📝 Planned |
+| P1 | Validation | `uv sync --all-extras --dev`, `maturin develop` with the `python` feature, and pytest run documented (and added to CI if feasible) | Ensure instructions work on fresh environments | 📝 Planned |
+| P2 | Future API expansion | Follow-up spec to design kernel function exports, error mapping, and data model | Defer until kernels stabilize | ⏸️ Deferred |
 
 _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
@@ -48,7 +48,6 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Current focus:** P0 build system wiring via maturin.
 - **Latest completed task:** Rust bindings shell exporting `EARTH_RADIUS_METERS` behind the `python` feature.
 - **Next up:** Python surface re-export and smoke test.
 

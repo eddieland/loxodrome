@@ -52,15 +52,15 @@ geodist-rs/
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Define core types (`Point`, `Distance`, error enum) and input validation | Types live in `geodist-rs/src/types.rs`, re-exported from `lib.rs`; invalid inputs return errors; degrees documented | Keep types FFI-friendly; include doc comments | Done |
-| P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | Done |
-| P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | Done |
-| P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | Done |
-| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | |
-| P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | |
-| P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | |
-| P2 | Optional spatial index acceleration | Prototype `rstar` (or similar) backed nearest-neighbor search to speed Hausdorff on large sets | Keep behind feature flag to preserve zero-dep core | |
-| P3 | Extended geodesic options | Optional ellipsoid selection, bearing output, and filtered/Hausdorff variants (e.g., clipped by bbox) | Only wire shapes; implementation can follow later | |
+| P0 | Define core types (`Point`, `Distance`, error enum) and input validation | Types live in `geodist-rs/src/types.rs`, re-exported from `lib.rs`; invalid inputs return errors; degrees documented | Keep types FFI-friendly; include doc comments | ✅ Done |
+| P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | ✅ Done |
+| P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | ✅ Done |
+| P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | ✅ Done |
+| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | 🚧 In progress |
+| P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | 📝 Planned |
+| P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | 📝 Planned |
+| P2 | Optional spatial index acceleration | Prototype `rstar` (or similar) backed nearest-neighbor search to speed Hausdorff on large sets | Keep behind feature flag to preserve zero-dep core | 📝 Planned |
+| P3 | Extended geodesic options | Optional ellipsoid selection, bearing output, and filtered/Hausdorff variants (e.g., clipped by bbox) | Only wire shapes; implementation can follow later | 📝 Planned |
 
 ### Risks & Mitigations
 
@@ -81,7 +81,6 @@ geodist-rs/
 
 ## Status Tracking (to be updated by subagent)
 
-- **Current focus:** _Minimal Python binding surface_
 - **Latest completed task:** _Add batch helper_
 - **Next up:** _Benchmark harness stub_
 
