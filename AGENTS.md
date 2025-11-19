@@ -18,6 +18,7 @@
 ## Coding Style & Naming
 
 - Python: Ruff formatting/linting enforced; follow PEP 8, type-first design (`pyproject.toml` sets `strict = true` for mypy). Use snake_case for functions/vars, PascalCase for classes, module-level constants in SCREAMING_SNAKE_CASE.
+- Module layout: keep Python public API definitions at the top of each `.py` file and place `_private` helpers after them so important entry points stay discoverable.
 - Keep the PyO3 extension stub in sync: update `pygeodist/src/geodist/_geodist_rs.pyi` whenever the Rust-exposed API changes so typings mirror the compiled bindings.
 - Rust: Standard Rustfmt defaults; favor small modules and explicit imports. Use snake_case for fns/vars, CamelCase for types/traits.
 

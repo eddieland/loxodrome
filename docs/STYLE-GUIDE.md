@@ -14,6 +14,7 @@
 - Target Python 3.10+; mypy runs in strict mode over `src` and `tests` (`make lint`).
 - Naming: snake_case for functions/vars, PascalCase for classes, SCREAMING_SNAKE_CASE for module constants.
 - Docstrings: add for public or non-obvious items; use Google style; skip trivial data holders/pass-throughs.
+- Layout: put public API objects at the top of each `.py` file and follow with `_private` helpers to keep important entry points obvious.
 - Types first: prefer explicit return/arg types; keep `pygeodist/src/geodist/_geodist_rs.pyi` in sync with Rust exports.
 - Tests live in `pygeodist/tests` mirroring package layout; name `test_*`; favor descriptive asserts and regressions.
 - Commands: `uv sync --all-extras` to set up; `make fmt`, `make lint`, `make test`, `make build` within `pygeodist`.
