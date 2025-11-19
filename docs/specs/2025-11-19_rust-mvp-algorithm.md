@@ -57,7 +57,7 @@ geodist-rs/
 | P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | ✅ Done |
 | P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | ✅ Done |
 | P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | 🚧 In progress |
-| P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | 📝 Planned |
+| P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | ✅ Done |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | 📝 Planned |
 | P2 | Optional spatial index acceleration | Prototype `rstar` (or similar) backed nearest-neighbor search to speed Hausdorff on large sets | Keep behind feature flag to preserve zero-dep core | 📝 Planned |
 | P3 | Extended geodesic options | Optional ellipsoid selection, bearing output, and filtered/Hausdorff variants (e.g., clipped by bbox) | Only wire shapes; implementation can follow later | 📝 Planned |
@@ -81,9 +81,9 @@ geodist-rs/
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _Add batch helper_
-- **Next up:** _Benchmark harness stub_
+- **Latest completed task:** _Benchmark harness stub_
+- **Next up:** _Minimal Python binding surface_
 
 ## Lessons Learned (ongoing)
 
-- _TBD_
+- Criterion is feature-gated to keep the default crate dependency-free.

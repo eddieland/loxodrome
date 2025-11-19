@@ -6,6 +6,13 @@ edition = "2024"
 [features]
 default = []
 python = ["pyo3/extension-module"]
+bench = ["criterion"]
 
 [dependencies]
+criterion = { version = "0.5.1", optional = true }
 pyo3 = { version = "0.22", optional = true }
+
+[[bench]]
+name = "distance"
+harness = false
+required-features = ["bench"]
