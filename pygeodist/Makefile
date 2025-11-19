@@ -6,34 +6,43 @@
 
 .PHONY: default install lint test upgrade build clean agent-rules
 
-default: agent-rules install lint test 
+### Makefile
 
-install:
-	uv sync --all-extras
+.PHONY: help
+help: ## Display this help
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@awk 'BEGIN {section="General"} /^### /{section=substr($$0,5); printf "\n\033[1m%s\033[0m\n", section} /^[a-zA-Z0-9_-]+:.*?## / {match($$0, /## (.*)$$/, a); printf "  \033[36m%-18s\033[0m %s\n", substr($$1,1,length($$1)-1), a[1]}' $(MAKEFILE_LIST)
 
-lint:
-	uv run python devtools/lint.py
 
-test:
+### Installation
+
+install: ## Install the project's dependencies with uv (**including all extras and dev dependencies**)
+	uv sync --all-extras --dev
+
+### Development
+
+lint: ## Run linters and formatting check
+	uv run ruff format --check src tests typings
+	uv run ruff check src tests typings
+	uv run mypy src tests
+	uv run codespell src tests README.md CONTRIBUTING.md
+
+test: ## Run tests
 	uv run pytest
 
-upgrade:
+fmt: ## Format code
+	uv run ruff check --fix --exit-zero src tests typings >/dev/null
+	uv run ruff format src tests typings
+
+upgrade: ## Upgrade dependencies
 	uv sync --upgrade --all-extras --dev
 
-build:
+build: ## Build the project
 	uv build
 
-agent-rules: CLAUDE.md AGENTS.md
-
-# Use .cursor/rules for sources of rules.
-# Create Claude and Codex rules from these.
-CLAUDE.md: .cursor/rules/general.mdc .cursor/rules/python.mdc
-	cat .cursor/rules/general.mdc .cursor/rules/python.mdc > CLAUDE.md
-
-AGENTS.md: .cursor/rules/general.mdc .cursor/rules/python.mdc
-	cat .cursor/rules/general.mdc .cursor/rules/python.mdc > AGENTS.md
-
-clean:
+clean: ## Clean up build artifacts and caches
 	-rm -rf dist/
 	-rm -rf *.egg-info/
 	-rm -rf .pytest_cache/
