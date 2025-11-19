@@ -4,13 +4,14 @@
 
 - Define a lean first pass of the Rust kernel focused on point distances and Hausdorff distance for point sets/paths.
 - Keep the shape compatible with future accuracy upgrades, performance tuning, and Python bindings without locking APIs prematurely.
+- Coordinate with the PyO3 bootstrap (`2025-11-19_pyo3-integration-plan.md`) so the kernel can be exported as a minimal wheel for early smoke testing.
 
 ## Guiding Constraints
 
 - Favor clarity over micro-optimizations; correctness and determinism are the initial priorities.
 - Keep the public surface small: single entry points for point-to-point, batch distance calculation, and Hausdorff over point sets, returning `Result` for fallible paths.
 - Avoid pinning to a specific ellipsoid implementation yet; start with a sane default (WGS84) and leave room for injectable models later.
-- Design for easy FFI exposure (simple structs/enums, `#[repr(C)]` when needed) so `pygeodist` can bind without churn.
+- Design for easy FFI/PyO3 exposure (simple structs/enums, `#[repr(C)]` when needed) so `pygeodist` can bind without churn; keep bindings feature-gated to avoid burdening the core.
 
 ## Target Project Structure (Rust Crate)
 
@@ -55,7 +56,7 @@ geodist-rs/
 | P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | Done |
 | P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | Done |
 | P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | Done |
-| P1 | Minimal Python binding surface | Expose distance and Hausdorff functions via `pyo3` or `ffi` scaffold with smoke tests in `pygeodist/tests` | Aim for parity with Rust API naming; skip perf tuning | |
+| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | |
 | P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | |
 | P2 | Optional spatial index acceleration | Prototype `rstar` (or similar) backed nearest-neighbor search to speed Hausdorff on large sets | Keep behind feature flag to preserve zero-dep core | |
@@ -68,6 +69,7 @@ geodist-rs/
 - **Risk:** Performance regressions once higher-accuracy methods are added. **Mitigation:** Add a benchmark harness early and document tolerances for CI thresholds.
 - **Risk:** Hausdorff over large point sets can be O(n*m). **Mitigation:** Document complexity; add early pruning options (bbox, thresholds) in future iterations.
 - **Risk:** Introducing spatial index deps increases build/download surface. **Mitigation:** Ship zero-dep core; gate `rstar` under a feature with clear benchmarks.
+- **Risk:** PyO3 feature could bloat builds or change linker expectations. **Mitigation:** Keep `python` feature off by default, mirror steps in the PyO3 plan, and ensure the core crate still builds as `rlib` without PyO3 present.
 
 ### Open Questions
 
@@ -75,6 +77,7 @@ geodist-rs/
 - Do we need a soft-dependency on `geo`/`proj` crates for validation, or keep zero-deps initially?
 - How much error tolerance is acceptable for the baseline spherical model in initial tests (e.g., 1e-4 relative vs. fixed meters)?
 - Should spatial indexing (`rstar`) ship as an optional feature now, or defer until we profile typical data sizes?
+- Should PyO3 bindings live in-core behind a feature or move to a dedicated bindings crate once APIs solidify?
 
 ## Status Tracking (to be updated by subagent)
 
