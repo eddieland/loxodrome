@@ -56,7 +56,7 @@ geodist-rs/
 | P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | ✅ Done |
 | P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | ✅ Done |
 | P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | ✅ Done |
-| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | 🚧 In progress |
+| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | ✅ Done |
 | P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | ✅ Done |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | 📝 Planned |
 | P2 | Optional spatial index acceleration | Prototype `rstar` (or similar) backed nearest-neighbor search to speed Hausdorff on large sets | Keep behind feature flag to preserve zero-dep core | 📝 Planned |
@@ -81,9 +81,10 @@ geodist-rs/
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _Benchmark harness stub_
-- **Next up:** _Minimal Python binding surface_
+- **Latest completed task:** _Minimal Python binding surface_
+- **Next up:** _Pluggable algorithm abstraction_
 
 ## Lessons Learned (ongoing)
 
 - Criterion is feature-gated to keep the default crate dependency-free.
+- PyO3 module compiles cleanly behind the `python` feature when using the 0.22 `Bound<PyModule>` signature.
