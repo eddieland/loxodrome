@@ -21,6 +21,8 @@ pub enum GeodistError {
   InvalidLatitude(f64),
   /// Longitude must be within `[-180.0, 180.0]` degrees and finite.
   InvalidLongitude(f64),
+  /// Altitude must be finite (meters above/below reference ellipsoid surface).
+  InvalidAltitude(f64),
   /// Distances must be finite and non-negative.
   InvalidDistance(f64),
   /// Radii must be finite and strictly positive.
@@ -49,6 +51,7 @@ impl fmt::Display for GeodistError {
       Self::InvalidLongitude(value) => {
         write!(f, "invalid longitude {value}; expected finite degrees in [-180, 180]")
       }
+      Self::InvalidAltitude(value) => write!(f, "invalid altitude {value}; expected finite meters"),
       Self::InvalidDistance(value) => write!(f, "invalid distance {value}; expected finite meters >= 0"),
       Self::InvalidRadius(value) => write!(f, "invalid radius {value}; expected finite meters > 0"),
       Self::InvalidEllipsoid { semi_major, semi_minor } => write!(
@@ -116,6 +119,62 @@ impl Point {
   pub fn validate(&self) -> Result<(), GeodistError> {
     validate_latitude(self.latitude)?;
     validate_longitude(self.longitude)?;
+    Ok(())
+  }
+}
+
+/// Geographic position with altitude in meters.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
+pub struct Point3D {
+  /// Latitude in degrees, expected in `[-90.0, 90.0]`.
+  pub latitude: f64,
+  /// Longitude in degrees, expected in `[-180.0, 180.0]`.
+  pub longitude: f64,
+  /// Altitude in meters relative to the reference ellipsoid; must be finite.
+  pub altitude_meters: f64,
+}
+
+impl Point3D {
+  /// Construct a validated 3D point from latitude/longitude (degrees) and
+  /// altitude (meters).
+  ///
+  /// # Errors
+  ///
+  /// Returns [`GeodistError`] when any component is out of range or non-finite.
+  pub fn new(latitude: f64, longitude: f64, altitude_meters: f64) -> Result<Self, GeodistError> {
+    validate_latitude(latitude)?;
+    validate_longitude(longitude)?;
+    validate_altitude(altitude_meters)?;
+    Ok(Self {
+      latitude,
+      longitude,
+      altitude_meters,
+    })
+  }
+
+  /// Construct a 3D point without performing validation.
+  ///
+  /// # Safety
+  ///
+  /// Caller must ensure latitude/longitude follow the same constraints as
+  /// [`Point`] and altitude is finite. Violating these assumptions can lead
+  /// to incorrect downstream calculations.
+  pub const unsafe fn new_unchecked(latitude: f64, longitude: f64, altitude_meters: f64) -> Self {
+    Self {
+      latitude,
+      longitude,
+      altitude_meters,
+    }
+  }
+
+  /// Validate the current point's coordinates and altitude.
+  ///
+  /// Use this to verify externally-constructed points (e.g., from FFI).
+  pub fn validate(&self) -> Result<(), GeodistError> {
+    validate_latitude(self.latitude)?;
+    validate_longitude(self.longitude)?;
+    validate_altitude(self.altitude_meters)?;
     Ok(())
   }
 }
@@ -194,6 +253,11 @@ impl Ellipsoid {
     validate_ellipsoid(self.semi_major_axis_meters, self.semi_minor_axis_meters)?;
     Ok((2.0 * self.semi_major_axis_meters + self.semi_minor_axis_meters) / 3.0)
   }
+
+  /// Validate the ellipsoid axes.
+  pub fn validate(&self) -> Result<(), GeodistError> {
+    validate_ellipsoid(self.semi_major_axis_meters, self.semi_minor_axis_meters)
+  }
 }
 
 /// Geographic bounding box used to filter point sets.
@@ -265,6 +329,14 @@ fn validate_longitude(value: f64) -> Result<(), GeodistError> {
   Ok(())
 }
 
+/// Validate that altitude is finite (meters).
+fn validate_altitude(value: f64) -> Result<(), GeodistError> {
+  if !value.is_finite() {
+    return Err(GeodistError::InvalidAltitude(value));
+  }
+  Ok(())
+}
+
 /// Validate that a distance is finite and non-negative.
 fn validate_distance(value: f64) -> Result<(), GeodistError> {
   if !value.is_finite() || value < 0.0 {
@@ -332,6 +404,21 @@ mod tests {
     assert_eq!(p.latitude, 120.0);
     assert_eq!(p.longitude, 200.0);
     assert!(p.validate().is_err());
+  }
+
+  #[test]
+  fn point3d_accepts_finite_altitude() {
+    let p = Point3D::new(10.0, 20.0, 500.0).unwrap();
+    assert_eq!(p.altitude_meters, 500.0);
+  }
+
+  #[test]
+  fn point3d_rejects_non_finite_altitude() {
+    let result = Point3D::new(0.0, 0.0, f64::NAN);
+    assert!(matches!(
+        result,
+        Err(GeodistError::InvalidAltitude(v)) if v.is_nan()
+    ));
   }
 
   #[test]

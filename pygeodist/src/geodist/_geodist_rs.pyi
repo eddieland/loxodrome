@@ -15,6 +15,14 @@ class Point:
     def __init__(self, latitude_degrees: float, longitude_degrees: float) -> None: ...
     def to_tuple(self) -> tuple[float, float]: ...
 
+class Point3D:
+    latitude_degrees: float
+    longitude_degrees: float
+    altitude_meters: float
+
+    def __init__(self, latitude_degrees: float, longitude_degrees: float, altitude_meters: float) -> None: ...
+    def to_tuple(self) -> tuple[float, float, float]: ...
+
 class GeodesicSolution:
     distance_meters: float
     initial_bearing_degrees: float
@@ -39,6 +47,7 @@ class BoundingBox:
 
 def geodesic_distance(p1: Point, p2: Point) -> float: ...
 def geodesic_with_bearings(p1: Point, p2: Point) -> GeodesicSolution: ...
+def geodesic_distance_3d(p1: Point3D, p2: Point3D) -> float: ...
 def hausdorff_directed(a: list[Point], b: list[Point]) -> float: ...
 def hausdorff(a: list[Point], b: list[Point]) -> float: ...
 def hausdorff_directed_clipped(a: list[Point], b: list[Point], bounding_box: BoundingBox) -> float: ...
@@ -47,9 +56,11 @@ def hausdorff_clipped(a: list[Point], b: list[Point], bounding_box: BoundingBox)
 __all__ = [
     "EARTH_RADIUS_METERS",
     "Point",
+    "Point3D",
     "GeodesicSolution",
     "BoundingBox",
     "geodesic_distance",
+    "geodesic_distance_3d",
     "geodesic_with_bearings",
     "hausdorff_directed",
     "hausdorff",

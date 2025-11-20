@@ -7,12 +7,13 @@ from dataclasses import dataclass
 
 from . import _geodist_rs
 from .errors import GeodistError
-from .geometry import BoundingBox, Point
+from .geometry import BoundingBox, Point, Point3D
 from .types import Meters
 
 __all__ = (
     "GeodesicResult",
     "geodesic_distance",
+    "geodesic_distance_3d",
     "geodesic_with_bearings",
     "hausdorff_directed",
     "hausdorff",
@@ -34,6 +35,14 @@ def geodesic_distance(origin: Point, destination: Point) -> Meters:
     """Compute the great-circle distance between two points in meters."""
     try:
         return float(_geodist_rs.geodesic_distance(origin._handle, destination._handle))
+    except ValueError as exc:
+        raise GeodistError(str(exc)) from exc
+
+
+def geodesic_distance_3d(origin: Point3D, destination: Point3D) -> Meters:
+    """Compute straight-line (ECEF chord) distance between two 3D points in meters."""
+    try:
+        return float(_geodist_rs.geodesic_distance_3d(origin._handle, destination._handle))
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 

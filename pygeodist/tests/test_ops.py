@@ -12,7 +12,9 @@ from geodist import (
     BoundingBox,
     GeodesicResult,
     Point,
+    Point3D,
     geodesic_distance,
+    geodesic_distance_3d,
     geodesic_with_bearings,
     hausdorff,
     hausdorff_clipped,
@@ -26,6 +28,13 @@ def test_geodesic_distance_matches_rust_kernel() -> None:
     east = Point(0.0, 1.0)
 
     assert geodesic_distance(origin, east) == approx(111_195.080_233_532_9)
+
+
+def test_geodesic_distance_3d_matches_vertical_offset() -> None:
+    ground = Point3D(0.0, 0.0, 0.0)
+    elevated = Point3D(0.0, 0.0, 150.0)
+
+    assert geodesic_distance_3d(ground, elevated) == approx(150.0)
 
 
 def test_geodesic_with_bearings_returns_distance_and_angles() -> None:

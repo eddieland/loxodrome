@@ -32,10 +32,10 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | Define distance semantics (surface arc vs 3D chord; which is default) | Decision recorded; downstream tasks reference chosen metric | Default: straight-line chord in ECEF; keep surface arc as future optional mode if needed | ✅ |
-| P0 | Add 3D point type + validation (Rust + PyO3 stub) | `Point3D` (or equivalent) validated alt; doc + tests; pyi updated | Ensure no per-point branching for 2D | 📝 |
-| P0 | Add mode-aware distance kernel | Mode fixed per call; 2D path unchanged; 3D uses chosen metric; tests | Consider trait or enum mode | 📝 |
+| P0 | Add 3D point type + validation (Rust + PyO3 stub) | `Point3D` (or equivalent) validated alt; doc + tests; pyi updated | Ensure no per-point branching for 2D | ✅ |
+| P0 | Add mode-aware distance kernel | Mode fixed per call; 2D path unchanged; 3D uses chosen metric; tests | Consider trait or enum mode | ✅ |
 | P1 | Extend Hausdorff to 3D | R-tree envelopes in 3D; clipped variants defined or deferred | Keep 2D perf unaffected | 📝 |
-| P1 | Python wrappers for 3D | Public API mirrors Rust; docs; tests | Avoid mixed-dimension inputs | 📝 |
+| P1 | Python wrappers for 3D | Public API mirrors Rust; docs; tests | Avoid mixed-dimension inputs | 🚧 |
 | P2 | Benchmarks and perf guardrails | Baseline 2D vs 3D; ensure no regressions | Integrate into CI later | 📝 |
 | P3 | CLI/interop helpers | Optional Typer/interop updates | Only if APIs stabilize | ⏸️ |
 
@@ -55,12 +55,12 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** Chose straight-line chord in ECEF as the default 3D metric; surface arc can be added later if there is demand.
-- **Next up:** Implement validated 3D point type + mode-aware distance kernel that keeps the 2D hot path identical.
+- **Latest completed task:** Added validated `Point3D`, ECEF chord distance on WGS84 ellipsoid, and Python bindings + smoke tests without touching the 2D hot path.
+- **Next up:** Extend Hausdorff to 3D (including clipping semantics) and round out the Python surface once the kernel supports it.
 
 ## Lessons Learned (ongoing)
 
-- _Empty — fill in as exploration progresses._
+- ECEF chord conversion needs explicit ellipsoid validation; keeping it a separate path avoids branching in the 2D geodesic kernels.
 
 ## Decision: 3D Metric Choice
 

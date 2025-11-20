@@ -59,6 +59,50 @@ impl Point {
   }
 }
 
+/// Geographic point with altitude expressed in degrees + meters.
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct Point3D {
+  /// Latitude in degrees north of the equator. Negative values are south.
+  #[pyo3(get)]
+  latitude_degrees: f64,
+  /// Longitude in degrees east of the prime meridian. Negative values are west.
+  #[pyo3(get)]
+  longitude_degrees: f64,
+  /// Altitude in meters relative to the reference ellipsoid.
+  #[pyo3(get)]
+  altitude_meters: f64,
+}
+
+#[pymethods]
+impl Point3D {
+  /// Create a new geographic point with altitude.
+  ///
+  /// Arguments are expected in degrees for latitude/longitude and meters for
+  /// altitude; callers should validate ranges in the Python layer.
+  #[new]
+  pub fn new(latitude_degrees: f64, longitude_degrees: f64, altitude_meters: f64) -> Self {
+    Self {
+      latitude_degrees,
+      longitude_degrees,
+      altitude_meters,
+    }
+  }
+
+  /// Return a tuple representation for convenient unpacking.
+  pub fn to_tuple(&self) -> (f64, f64, f64) {
+    (self.latitude_degrees, self.longitude_degrees, self.altitude_meters)
+  }
+
+  /// Human-friendly representation for debugging.
+  fn __repr__(&self) -> String {
+    format!(
+      "Point3D(latitude_degrees={}, longitude_degrees={}, altitude_meters={})",
+      self.latitude_degrees, self.longitude_degrees, self.altitude_meters
+    )
+  }
+}
+
 /// Distance + bearings solution for a geodesic path.
 #[pyclass(frozen)]
 #[derive(Debug, Clone)]
@@ -165,6 +209,15 @@ fn map_to_point(handle: &Point) -> PyResult<types::Point> {
     .map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
+fn map_to_point3d(handle: &Point3D) -> PyResult<types::Point3D> {
+  types::Point3D::new(
+    handle.latitude_degrees,
+    handle.longitude_degrees,
+    handle.altitude_meters,
+  )
+  .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
 fn map_to_points(handles: &[Point]) -> PyResult<Vec<types::Point>> {
   handles.iter().map(map_to_point).collect::<Result<Vec<_>, _>>()
 }
@@ -198,6 +251,15 @@ fn geodesic_with_bearings(p1: &Point, p2: &Point) -> PyResult<GeodesicSolution> 
     distance::geodesic_with_bearings(origin, destination).map_err(|err| PyValueError::new_err(err.to_string()))?;
 
   Ok(solution.into())
+}
+
+#[pyfunction]
+fn geodesic_distance_3d(p1: &Point3D, p2: &Point3D) -> PyResult<f64> {
+  let origin = map_to_point3d(p1)?;
+  let destination = map_to_point3d(p2)?;
+  distance::geodesic_distance_3d(origin, destination)
+    .map(|distance| distance.meters())
+    .map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
 #[pyfunction]
@@ -246,10 +308,12 @@ fn hausdorff_clipped(a: Vec<Point>, b: Vec<Point>, bounding_box: &BoundingBox) -
 fn _geodist_rs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("EARTH_RADIUS_METERS", EARTH_RADIUS_METERS)?;
   m.add_class::<Point>()?;
+  m.add_class::<Point3D>()?;
   m.add_class::<GeodesicSolution>()?;
   m.add_class::<BoundingBox>()?;
   m.add_function(wrap_pyfunction!(geodesic_distance, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings, m)?)?;
+  m.add_function(wrap_pyfunction!(geodesic_distance_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped, m)?)?;

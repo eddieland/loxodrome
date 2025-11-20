@@ -11,10 +11,11 @@ from typing import Final
 
 from . import _geodist_rs
 from .errors import GeodistError, InvalidGeometryError
-from .geometry import BoundingBox, Point
+from .geometry import BoundingBox, Point, Point3D
 from .ops import (
     GeodesicResult,
     geodesic_distance,
+    geodesic_distance_3d,
     geodesic_with_bearings,
     hausdorff,
     hausdorff_clipped,
@@ -30,8 +31,10 @@ __all__ = (
     "InvalidGeometryError",
     "BoundingBox",
     "Point",
+    "Point3D",
     "GeodesicResult",
     "geodesic_distance",
+    "geodesic_distance_3d",
     "geodesic_with_bearings",
     "hausdorff",
     "hausdorff_clipped",

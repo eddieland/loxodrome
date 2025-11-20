@@ -3,7 +3,7 @@
 //! Inputs are degrees; output is meters.
 
 use crate::algorithms::{GeodesicAlgorithm, Spherical};
-use crate::{Distance, Ellipsoid, GeodistError, Point};
+use crate::{Distance, Ellipsoid, GeodistError, Point, Point3D};
 
 /// Distance plus forward and reverse bearings for a geodesic path.
 ///
@@ -91,6 +91,48 @@ pub fn geodesic_distance_on_radius(radius_meters: f64, p1: Point, p2: Point) -> 
 pub fn geodesic_distance_on_ellipsoid(ellipsoid: Ellipsoid, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   let strategy = Spherical::from_ellipsoid(ellipsoid)?;
   geodesic_distance_with(&strategy, p1, p2)
+}
+
+/// Compute straight-line (ECEF chord) distance between two 3D geographic
+/// points.
+///
+/// Uses the WGS84 ellipsoid and treats altitude as meters above the reference
+/// ellipsoid surface. Inputs are degrees for latitude/longitude and meters for
+/// altitude.
+///
+/// # Errors
+///
+/// Returns [`GeodistError`] when coordinates or altitude are invalid, or when
+/// a valid [`Distance`] cannot be constructed.
+pub fn geodesic_distance_3d(p1: Point3D, p2: Point3D) -> Result<Distance, GeodistError> {
+  geodesic_distance_3d_on_ellipsoid(Ellipsoid::wgs84(), p1, p2)
+}
+
+/// Compute straight-line (ECEF chord) distance between two 3D points using a
+/// custom ellipsoid.
+///
+/// Inputs are degrees for latitude/longitude and meters for altitude. The
+/// ellipsoid defines the reference axes for converting to ECEF.
+///
+/// # Errors
+///
+/// Returns [`GeodistError`] when point validation fails, the ellipsoid axes
+/// are invalid, or when the resulting meter value is not representable as a
+/// [`Distance`].
+pub fn geodesic_distance_3d_on_ellipsoid(
+  ellipsoid: Ellipsoid,
+  p1: Point3D,
+  p2: Point3D,
+) -> Result<Distance, GeodistError> {
+  let ecef1 = geodetic_to_ecef(p1, &ellipsoid)?;
+  let ecef2 = geodetic_to_ecef(p2, &ellipsoid)?;
+
+  let dx = ecef1.0 - ecef2.0;
+  let dy = ecef1.1 - ecef2.1;
+  let dz = ecef1.2 - ecef2.2;
+  let meters = (dx * dx + dy * dy + dz * dz).sqrt();
+
+  Distance::from_meters(meters)
 }
 
 /// Compute geodesic distances for many point pairs in a single call.
@@ -220,6 +262,31 @@ fn normalize_bearing(mut degrees: f64) -> f64 {
     degrees += 360.0;
   }
   degrees
+}
+
+fn geodetic_to_ecef(point: Point3D, ellipsoid: &Ellipsoid) -> Result<(f64, f64, f64), GeodistError> {
+  point.validate()?;
+  ellipsoid.validate()?;
+
+  let a = ellipsoid.semi_major_axis_meters;
+  let b = ellipsoid.semi_minor_axis_meters;
+  let eccentricity_squared = 1.0 - (b * b) / (a * a);
+
+  let lat = point.latitude.to_radians();
+  let lon = point.longitude.to_radians();
+  let sin_lat = lat.sin();
+  let cos_lat = lat.cos();
+  let sin_lon = lon.sin();
+  let cos_lon = lon.cos();
+
+  let surface_normal_radius = a / (1.0 - eccentricity_squared * sin_lat * sin_lat).sqrt();
+  let altitude = point.altitude_meters;
+
+  let x = (surface_normal_radius + altitude) * cos_lat * cos_lon;
+  let y = (surface_normal_radius + altitude) * cos_lat * sin_lon;
+  let z = ((1.0 - eccentricity_squared) * surface_normal_radius + altitude) * sin_lat;
+
+  Ok((x, y, z))
 }
 
 #[cfg(test)]
@@ -363,5 +430,37 @@ mod tests {
     let result = geodesic_with_bearings(origin, east).unwrap();
     assert!((result.initial_bearing_degrees() - 90.0).abs() < 1e-6);
     assert!((result.final_bearing_degrees() - 90.0).abs() < 1e-6);
+  }
+
+  #[test]
+  fn computes_chord_distance_on_equator() {
+    let origin = Point3D::new(0.0, 0.0, 0.0).unwrap();
+    let east = Point3D::new(0.0, 1.0, 0.0).unwrap();
+
+    let meters = geodesic_distance_3d(origin, east).unwrap().meters();
+    let expected = 2.0 * Ellipsoid::wgs84().semi_major_axis_meters * (0.5_f64.to_radians().sin());
+    assert!((meters - expected).abs() < 1e-6);
+  }
+
+  #[test]
+  fn altitude_only_distance_matches_vertical_delta() {
+    let ground = Point3D::new(0.0, 0.0, 0.0).unwrap();
+    let elevated = Point3D::new(0.0, 0.0, 1_000.0).unwrap();
+
+    let meters = geodesic_distance_3d(ground, elevated).unwrap().meters();
+    assert!((meters - 1_000.0).abs() < 1e-9);
+  }
+
+  #[test]
+  fn geodesic_distance_3d_rejects_invalid_altitude() {
+    let nan_point = Point3D {
+      latitude: 0.0,
+      longitude: 0.0,
+      altitude_meters: f64::NAN,
+    };
+    let valid = Point3D::new(0.0, 0.0, 0.0).unwrap();
+
+    let result = geodesic_distance_3d(nan_point, valid);
+    assert!(matches!(result, Err(GeodistError::InvalidAltitude(v)) if v.is_nan()));
   }
 }

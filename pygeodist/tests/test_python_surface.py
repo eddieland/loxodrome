@@ -22,8 +22,10 @@ def test_public_api_reflects_trimmed_surface() -> None:
         "InvalidGeometryError",
         "BoundingBox",
         "Point",
+        "Point3D",
         "GeodesicResult",
         "geodesic_distance",
+        "geodesic_distance_3d",
         "geodesic_with_bearings",
         "hausdorff",
         "hausdorff_clipped",
@@ -33,5 +35,6 @@ def test_public_api_reflects_trimmed_surface() -> None:
 
     # Ensure the public Point wrapper is wired to the module import.
     assert geodist.Point.__name__ == "Point"
+    assert geodist.Point3D.__name__ == "Point3D"
     assert geodist.BoundingBox.__name__ == "BoundingBox"
     assert geodist.GeodesicResult.__name__ == "GeodesicResult"

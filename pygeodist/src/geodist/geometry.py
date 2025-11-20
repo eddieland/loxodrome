@@ -7,10 +7,11 @@ from math import isfinite
 
 from . import _geodist_rs
 from .errors import InvalidGeometryError
-from .types import BoundingBoxDegrees, LatitudeDegrees, LongitudeDegrees, PointDegrees
+from .types import AltitudeMeters, BoundingBoxDegrees, LatitudeDegrees, LongitudeDegrees, Point3DDegrees, PointDegrees
 
 __all__ = (
     "Point",
+    "Point3D",
     "BoundingBox",
 )
 
@@ -55,6 +56,63 @@ class Point:
     def __eq__(self, other: object) -> bool:
         """Check equality with another Point."""
         if not isinstance(other, Point):
+            return NotImplemented
+        return self.to_tuple() == other.to_tuple()
+
+
+class Point3D:
+    """Immutable geographic point with altitude."""
+
+    __slots__ = ("_handle",)
+
+    def __init__(
+        self,
+        latitude_degrees: LatitudeDegrees,
+        longitude_degrees: LongitudeDegrees,
+        altitude_meters: AltitudeMeters,
+    ) -> None:
+        """Initialize a 3D point from latitude/longitude in degrees and altitude in meters."""
+        latitude = _coerce_latitude(latitude_degrees)
+        longitude = _coerce_longitude(longitude_degrees)
+        altitude = _coerce_altitude(altitude_meters)
+        self._handle = _geodist_rs.Point3D(latitude, longitude, altitude)
+
+    @property
+    def latitude_degrees(self) -> LatitudeDegrees:
+        """Return the latitude in degrees."""
+        return float(self._handle.latitude_degrees)
+
+    @property
+    def longitude_degrees(self) -> LongitudeDegrees:
+        """Return the longitude in degrees."""
+        return float(self._handle.longitude_degrees)
+
+    @property
+    def altitude_meters(self) -> AltitudeMeters:
+        """Return the altitude in meters."""
+        return float(self._handle.altitude_meters)
+
+    def to_tuple(self) -> Point3DDegrees:
+        """Return a tuple representation for interoperability."""
+        return self._handle.to_tuple()
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterate over the latitude, longitude, and altitude."""
+        yield from self.to_tuple()
+
+    def __repr__(self) -> str:
+        """Return a string representation of the 3D point."""
+        return (
+            "Point3D("
+            f"latitude_degrees={self.latitude_degrees}, "
+            f"longitude_degrees={self.longitude_degrees}, "
+            f"altitude_meters={self.altitude_meters}"
+            ")"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another Point3D."""
+        if not isinstance(other, Point3D):
             return NotImplemented
         return self.to_tuple() == other.to_tuple()
 
@@ -106,6 +164,21 @@ def _coerce_longitude(longitude_degrees: float) -> LongitudeDegrees:
         max_value=_LONGITUDE_MAX_DEGREES,
         name="longitude_degrees",
     )
+
+
+def _coerce_altitude(altitude_meters: float) -> AltitudeMeters:
+    if isinstance(altitude_meters, bool):
+        raise InvalidGeometryError(f"altitude_meters must be a float, not bool: {altitude_meters!r}")
+
+    try:
+        numeric_value = float(altitude_meters)
+    except (TypeError, ValueError) as exc:
+        raise InvalidGeometryError(f"altitude_meters must be convertible to float: {altitude_meters!r}") from exc
+
+    if not isfinite(numeric_value):
+        raise InvalidGeometryError(f"altitude_meters must be finite: {numeric_value!r}")
+
+    return numeric_value
 
 
 class BoundingBox:

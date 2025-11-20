@@ -23,10 +23,10 @@ the Rust surface settles.
 - **Bounding-box-clipped variants:** Restrict Hausdorff evaluation to a region
   to ignore distant outliers and focus on the area of interest.
 
-Note on 3D: When 3D support arrives, the default will be a straight-line chord
-in ECEF (altitude-aware, “as-the-crow-flies” through space). Surface arc with
-altitude adjustment can be added later if needed. Today, only 2D
-types/algorithms are exposed.
+Note on 3D: Initial support exposes a straight-line chord in ECEF (altitude-aware,
+“as-the-crow-flies” through space) via `Point3D` + `geodesic_distance_3d` on the
+WGS84 ellipsoid. Surface arc with altitude adjustment can be added later if
+needed.
 
 ## Crates & Packages
 
