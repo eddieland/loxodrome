@@ -72,10 +72,10 @@ pub(crate) fn spherical_distance(radius_meters: f64, p1: Point, p2: Point) -> Re
   p1.validate()?;
   p2.validate()?;
 
-  let lat1 = p1.latitude.to_radians();
-  let lat2 = p2.latitude.to_radians();
-  let delta_lat = (p2.latitude - p1.latitude).to_radians();
-  let delta_lon = (p2.longitude - p1.longitude).to_radians();
+  let lat1 = p1.lat_deg.to_radians();
+  let lat2 = p2.lat_deg.to_radians();
+  let delta_lat = (p2.lat_deg - p1.lat_deg).to_radians();
+  let delta_lon = (p2.lon_deg - p1.lon_deg).to_radians();
 
   let sin_lat = (delta_lat / 2.0).sin();
   let sin_lon = (delta_lon / 2.0).sin();
@@ -107,8 +107,8 @@ mod tests {
   #[test]
   fn propagates_validation_errors() {
     let invalid = Point {
-      latitude: 200.0,
-      longitude: 0.0,
+      lat_deg: 200.0,
+      lon_deg: 0.0,
     };
     let valid = Point::new(0.0, 0.0).unwrap();
     let result = Spherical::default().geodesic_distance(invalid, valid);

@@ -9,18 +9,18 @@ from typing import Final
 EARTH_RADIUS_METERS: Final[float]
 
 class Point:
-    latitude_degrees: float
-    longitude_degrees: float
+    lat_deg: float
+    lon_deg: float
 
-    def __init__(self, latitude_degrees: float, longitude_degrees: float) -> None: ...
+    def __init__(self, lat_deg: float, lon_deg: float) -> None: ...
     def to_tuple(self) -> tuple[float, float]: ...
 
 class Point3D:
-    latitude_degrees: float
-    longitude_degrees: float
-    altitude_meters: float
+    lat_deg: float
+    lon_deg: float
+    altitude_m: float
 
-    def __init__(self, latitude_degrees: float, longitude_degrees: float, altitude_meters: float) -> None: ...
+    def __init__(self, lat_deg: float, lon_deg: float, altitude_m: float) -> None: ...
     def to_tuple(self) -> tuple[float, float, float]: ...
 
 class GeodesicSolution:
@@ -31,17 +31,17 @@ class GeodesicSolution:
     def to_tuple(self) -> tuple[float, float, float]: ...
 
 class BoundingBox:
-    min_latitude_degrees: float
-    max_latitude_degrees: float
-    min_longitude_degrees: float
-    max_longitude_degrees: float
+    min_lat_deg: float
+    max_lat_deg: float
+    min_lon_deg: float
+    max_lon_deg: float
 
     def __init__(
         self,
-        min_latitude_degrees: float,
-        max_latitude_degrees: float,
-        min_longitude_degrees: float,
-        max_longitude_degrees: float,
+        min_lat_deg: float,
+        max_lat_deg: float,
+        min_lon_deg: float,
+        max_lon_deg: float,
     ) -> None: ...
     def to_tuple(self) -> tuple[float, float, float, float]: ...
 

@@ -25,10 +25,10 @@ use crate::{distance, hausdorff as hausdorff_kernel, types};
 pub struct Point {
   /// Latitude in degrees north of the equator. Negative values are south.
   #[pyo3(get)]
-  latitude_degrees: f64,
+  lat_deg: f64,
   /// Longitude in degrees east of the prime meridian. Negative values are west.
   #[pyo3(get)]
-  longitude_degrees: f64,
+  lon_deg: f64,
 }
 
 #[pymethods]
@@ -38,24 +38,18 @@ impl Point {
   /// Arguments are expected in degrees and are stored as-is; callers should
   /// validate ranges in the Python layer.
   #[new]
-  pub fn new(latitude_degrees: f64, longitude_degrees: f64) -> Self {
-    Self {
-      latitude_degrees,
-      longitude_degrees,
-    }
+  pub fn new(lat_deg: f64, lon_deg: f64) -> Self {
+    Self { lat_deg, lon_deg }
   }
 
   /// Return a tuple representation for convenient unpacking.
   pub fn to_tuple(&self) -> (f64, f64) {
-    (self.latitude_degrees, self.longitude_degrees)
+    (self.lat_deg, self.lon_deg)
   }
 
   /// Human-friendly representation for debugging.
   fn __repr__(&self) -> String {
-    format!(
-      "Point(latitude_degrees={}, longitude_degrees={})",
-      self.latitude_degrees, self.longitude_degrees
-    )
+    format!("Point(lat_deg={}, lon_deg={})", self.lat_deg, self.lon_deg)
   }
 }
 
@@ -65,13 +59,13 @@ impl Point {
 pub struct Point3D {
   /// Latitude in degrees north of the equator. Negative values are south.
   #[pyo3(get)]
-  latitude_degrees: f64,
+  lat_deg: f64,
   /// Longitude in degrees east of the prime meridian. Negative values are west.
   #[pyo3(get)]
-  longitude_degrees: f64,
+  lon_deg: f64,
   /// Altitude in meters relative to the reference ellipsoid.
   #[pyo3(get)]
-  altitude_meters: f64,
+  altitude_m: f64,
 }
 
 #[pymethods]
@@ -81,24 +75,24 @@ impl Point3D {
   /// Arguments are expected in degrees for latitude/longitude and meters for
   /// altitude; callers should validate ranges in the Python layer.
   #[new]
-  pub fn new(latitude_degrees: f64, longitude_degrees: f64, altitude_meters: f64) -> Self {
+  pub fn new(lat_deg: f64, lon_deg: f64, altitude_m: f64) -> Self {
     Self {
-      latitude_degrees,
-      longitude_degrees,
-      altitude_meters,
+      lat_deg,
+      lon_deg,
+      altitude_m,
     }
   }
 
   /// Return a tuple representation for convenient unpacking.
   pub fn to_tuple(&self) -> (f64, f64, f64) {
-    (self.latitude_degrees, self.longitude_degrees, self.altitude_meters)
+    (self.lat_deg, self.lon_deg, self.altitude_m)
   }
 
   /// Human-friendly representation for debugging.
   fn __repr__(&self) -> String {
     format!(
-      "Point3D(latitude_degrees={}, longitude_degrees={}, altitude_meters={})",
-      self.latitude_degrees, self.longitude_degrees, self.altitude_meters
+      "Point3D(lat_deg={}, lon_deg={}, altitude_m={})",
+      self.lat_deg, self.lon_deg, self.altitude_m
     )
   }
 }
@@ -150,72 +144,52 @@ impl GeodesicSolution {
 #[derive(Debug, Clone)]
 pub struct BoundingBox {
   #[pyo3(get)]
-  min_latitude_degrees: f64,
+  min_lat_deg: f64,
   #[pyo3(get)]
-  max_latitude_degrees: f64,
+  max_lat_deg: f64,
   #[pyo3(get)]
-  min_longitude_degrees: f64,
+  min_lon_deg: f64,
   #[pyo3(get)]
-  max_longitude_degrees: f64,
+  max_lon_deg: f64,
 }
 
 #[pymethods]
 impl BoundingBox {
   /// Create a new bounding box from ordered corners.
   #[new]
-  pub fn new(
-    min_latitude_degrees: f64,
-    max_latitude_degrees: f64,
-    min_longitude_degrees: f64,
-    max_longitude_degrees: f64,
-  ) -> PyResult<Self> {
-    let bbox = types::BoundingBox::new(
-      min_latitude_degrees,
-      max_latitude_degrees,
-      min_longitude_degrees,
-      max_longitude_degrees,
-    )
-    .map_err(|err| PyValueError::new_err(err.to_string()))?;
+  pub fn new(min_lat_deg: f64, max_lat_deg: f64, min_lon_deg: f64, max_lon_deg: f64) -> PyResult<Self> {
+    let bbox = types::BoundingBox::new(min_lat_deg, max_lat_deg, min_lon_deg, max_lon_deg)
+      .map_err(|err| PyValueError::new_err(err.to_string()))?;
 
     Ok(Self {
-      min_latitude_degrees: bbox.min_latitude,
-      max_latitude_degrees: bbox.max_latitude,
-      min_longitude_degrees: bbox.min_longitude,
-      max_longitude_degrees: bbox.max_longitude,
+      min_lat_deg: bbox.min_lat_deg,
+      max_lat_deg: bbox.max_lat_deg,
+      min_lon_deg: bbox.min_lon_deg,
+      max_lon_deg: bbox.max_lon_deg,
     })
   }
 
   /// Return a tuple representation for convenient unpacking.
   pub fn to_tuple(&self) -> (f64, f64, f64, f64) {
-    (
-      self.min_latitude_degrees,
-      self.max_latitude_degrees,
-      self.min_longitude_degrees,
-      self.max_longitude_degrees,
-    )
+    (self.min_lat_deg, self.max_lat_deg, self.min_lon_deg, self.max_lon_deg)
   }
 
   /// Human-friendly representation for debugging.
   fn __repr__(&self) -> String {
     format!(
-      "BoundingBox(min_latitude_degrees={}, max_latitude_degrees={}, min_longitude_degrees={}, max_longitude_degrees={})",
-      self.min_latitude_degrees, self.max_latitude_degrees, self.min_longitude_degrees, self.max_longitude_degrees
+      "BoundingBox(min_lat_deg={}, max_lat_deg={}, min_lon_deg={}, max_lon_deg={})",
+      self.min_lat_deg, self.max_lat_deg, self.min_lon_deg, self.max_lon_deg
     )
   }
 }
 
 fn map_to_point(handle: &Point) -> PyResult<types::Point> {
-  types::Point::new(handle.latitude_degrees, handle.longitude_degrees)
-    .map_err(|err| PyValueError::new_err(err.to_string()))
+  types::Point::new(handle.lat_deg, handle.lon_deg).map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
 fn map_to_point3d(handle: &Point3D) -> PyResult<types::Point3D> {
-  types::Point3D::new(
-    handle.latitude_degrees,
-    handle.longitude_degrees,
-    handle.altitude_meters,
-  )
-  .map_err(|err| PyValueError::new_err(err.to_string()))
+  types::Point3D::new(handle.lat_deg, handle.lon_deg, handle.altitude_m)
+    .map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
 fn map_to_points(handles: &[Point]) -> PyResult<Vec<types::Point>> {
@@ -224,10 +198,10 @@ fn map_to_points(handles: &[Point]) -> PyResult<Vec<types::Point>> {
 
 fn map_to_bounding_box(handle: &BoundingBox) -> PyResult<types::BoundingBox> {
   types::BoundingBox::new(
-    handle.min_latitude_degrees,
-    handle.max_latitude_degrees,
-    handle.min_longitude_degrees,
-    handle.max_longitude_degrees,
+    handle.min_lat_deg,
+    handle.max_lat_deg,
+    handle.min_lon_deg,
+    handle.max_lon_deg,
   )
   .map_err(|err| PyValueError::new_err(err.to_string()))
 }

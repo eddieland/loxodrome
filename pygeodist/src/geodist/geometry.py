@@ -7,7 +7,7 @@ from math import isfinite
 
 from . import _geodist_rs
 from .errors import InvalidGeometryError
-from .types import AltitudeMeters, BoundingBoxDegrees, LatitudeDegrees, LongitudeDegrees, Point3DDegrees, PointDegrees
+from .types import AltitudeM, BoundingBoxDeg, LatitudeDeg, LongitudeDeg, Point3DDeg, PointDeg
 
 __all__ = (
     "Point",
@@ -23,25 +23,25 @@ class Point:
 
     def __init__(
         self,
-        latitude_degrees: LatitudeDegrees,
-        longitude_degrees: LongitudeDegrees,
+        lat_deg: LatitudeDeg,
+        lon_deg: LongitudeDeg,
     ) -> None:
         """Initialize a Point from latitude and longitude in degrees."""
-        latitude = _coerce_latitude(latitude_degrees)
-        longitude = _coerce_longitude(longitude_degrees)
+        latitude = _coerce_latitude(lat_deg)
+        longitude = _coerce_longitude(lon_deg)
         self._handle = _geodist_rs.Point(latitude, longitude)
 
     @property
-    def latitude_degrees(self) -> LatitudeDegrees:
+    def lat_deg(self) -> LatitudeDeg:
         """Return the latitude in degrees."""
-        return float(self._handle.latitude_degrees)
+        return float(self._handle.lat_deg)
 
     @property
-    def longitude_degrees(self) -> LongitudeDegrees:
+    def lon_deg(self) -> LongitudeDeg:
         """Return the longitude in degrees."""
-        return float(self._handle.longitude_degrees)
+        return float(self._handle.lon_deg)
 
-    def to_tuple(self) -> PointDegrees:
+    def to_tuple(self) -> PointDeg:
         """Return a tuple representation for interoperability."""
         return self._handle.to_tuple()
 
@@ -51,7 +51,7 @@ class Point:
 
     def __repr__(self) -> str:
         """Return a string representation of the Point."""
-        return f"Point(latitude_degrees={self.latitude_degrees}, longitude_degrees={self.longitude_degrees})"
+        return f"Point(lat_deg={self.lat_deg}, lon_deg={self.lon_deg})"
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another Point."""
@@ -67,32 +67,32 @@ class Point3D:
 
     def __init__(
         self,
-        latitude_degrees: LatitudeDegrees,
-        longitude_degrees: LongitudeDegrees,
-        altitude_meters: AltitudeMeters,
+        lat_deg: LatitudeDeg,
+        lon_deg: LongitudeDeg,
+        altitude_m: AltitudeM,
     ) -> None:
         """Initialize a 3D point from latitude/longitude in degrees and altitude in meters."""
-        latitude = _coerce_latitude(latitude_degrees)
-        longitude = _coerce_longitude(longitude_degrees)
-        altitude = _coerce_altitude(altitude_meters)
+        latitude = _coerce_latitude(lat_deg)
+        longitude = _coerce_longitude(lon_deg)
+        altitude = _coerce_altitude(altitude_m)
         self._handle = _geodist_rs.Point3D(latitude, longitude, altitude)
 
     @property
-    def latitude_degrees(self) -> LatitudeDegrees:
+    def lat_deg(self) -> LatitudeDeg:
         """Return the latitude in degrees."""
-        return float(self._handle.latitude_degrees)
+        return float(self._handle.lat_deg)
 
     @property
-    def longitude_degrees(self) -> LongitudeDegrees:
+    def lon_deg(self) -> LongitudeDeg:
         """Return the longitude in degrees."""
-        return float(self._handle.longitude_degrees)
+        return float(self._handle.lon_deg)
 
     @property
-    def altitude_meters(self) -> AltitudeMeters:
+    def altitude_m(self) -> AltitudeM:
         """Return the altitude in meters."""
-        return float(self._handle.altitude_meters)
+        return float(self._handle.altitude_m)
 
-    def to_tuple(self) -> Point3DDegrees:
+    def to_tuple(self) -> Point3DDeg:
         """Return a tuple representation for interoperability."""
         return self._handle.to_tuple()
 
@@ -104,9 +104,9 @@ class Point3D:
         """Return a string representation of the 3D point."""
         return (
             "Point3D("
-            f"latitude_degrees={self.latitude_degrees}, "
-            f"longitude_degrees={self.longitude_degrees}, "
-            f"altitude_meters={self.altitude_meters}"
+            f"lat_deg={self.lat_deg}, "
+            f"lon_deg={self.lon_deg}, "
+            f"altitude_m={self.altitude_m}"
             ")"
         )
 
@@ -148,35 +148,35 @@ def _coerce_coordinate(
     return numeric_value
 
 
-def _coerce_latitude(latitude_degrees: float) -> LatitudeDegrees:
+def _coerce_latitude(lat_deg: float) -> LatitudeDeg:
     return _coerce_coordinate(
-        latitude_degrees,
+        lat_deg,
         min_value=_LATITUDE_MIN_DEGREES,
         max_value=_LATITUDE_MAX_DEGREES,
-        name="latitude_degrees",
+        name="lat_deg",
     )
 
 
-def _coerce_longitude(longitude_degrees: float) -> LongitudeDegrees:
+def _coerce_longitude(lon_deg: float) -> LongitudeDeg:
     return _coerce_coordinate(
-        longitude_degrees,
+        lon_deg,
         min_value=_LONGITUDE_MIN_DEGREES,
         max_value=_LONGITUDE_MAX_DEGREES,
-        name="longitude_degrees",
+        name="lon_deg",
     )
 
 
-def _coerce_altitude(altitude_meters: float) -> AltitudeMeters:
-    if isinstance(altitude_meters, bool):
-        raise InvalidGeometryError(f"altitude_meters must be a float, not bool: {altitude_meters!r}")
+def _coerce_altitude(altitude_m: float) -> AltitudeM:
+    if isinstance(altitude_m, bool):
+        raise InvalidGeometryError(f"altitude_m must be a float, not bool: {altitude_m!r}")
 
     try:
-        numeric_value = float(altitude_meters)
+        numeric_value = float(altitude_m)
     except (TypeError, ValueError) as exc:
-        raise InvalidGeometryError(f"altitude_meters must be convertible to float: {altitude_meters!r}") from exc
+        raise InvalidGeometryError(f"altitude_m must be convertible to float: {altitude_m!r}") from exc
 
     if not isfinite(numeric_value):
-        raise InvalidGeometryError(f"altitude_meters must be finite: {numeric_value!r}")
+        raise InvalidGeometryError(f"altitude_m must be finite: {numeric_value!r}")
 
     return numeric_value
 
@@ -188,24 +188,24 @@ class BoundingBox:
 
     def __init__(
         self,
-        min_latitude_degrees: LatitudeDegrees,
-        max_latitude_degrees: LatitudeDegrees,
-        min_longitude_degrees: LongitudeDegrees,
-        max_longitude_degrees: LongitudeDegrees,
+        min_lat_deg: LatitudeDeg,
+        max_lat_deg: LatitudeDeg,
+        min_lon_deg: LongitudeDeg,
+        max_lon_deg: LongitudeDeg,
     ) -> None:
         """Initialize a BoundingBox from min/max latitude and longitude in degrees."""
-        min_latitude = _coerce_latitude(min_latitude_degrees)
-        max_latitude = _coerce_latitude(max_latitude_degrees)
-        min_longitude = _coerce_longitude(min_longitude_degrees)
-        max_longitude = _coerce_longitude(max_longitude_degrees)
+        min_latitude = _coerce_latitude(min_lat_deg)
+        max_latitude = _coerce_latitude(max_lat_deg)
+        min_longitude = _coerce_longitude(min_lon_deg)
+        max_longitude = _coerce_longitude(max_lon_deg)
 
         if min_latitude > max_latitude:
             raise InvalidGeometryError(
-                f"min_latitude_degrees must not exceed max_latitude_degrees: {min_latitude} > {max_latitude}"
+                f"min_lat_deg must not exceed max_lat_deg: {min_latitude} > {max_latitude}"
             )
         if min_longitude > max_longitude:
             raise InvalidGeometryError(
-                f"min_longitude_degrees must not exceed max_longitude_degrees: {min_longitude} > {max_longitude}"
+                f"min_lon_deg must not exceed max_lon_deg: {min_longitude} > {max_longitude}"
             )
 
         self._handle = _geodist_rs.BoundingBox(
@@ -216,26 +216,26 @@ class BoundingBox:
         )
 
     @property
-    def min_latitude_degrees(self) -> LatitudeDegrees:
+    def min_lat_deg(self) -> LatitudeDeg:
         """Return the minimum latitude in degrees."""
-        return float(self._handle.min_latitude_degrees)
+        return float(self._handle.min_lat_deg)
 
     @property
-    def max_latitude_degrees(self) -> LatitudeDegrees:
+    def max_lat_deg(self) -> LatitudeDeg:
         """Return the maximum latitude in degrees."""
-        return float(self._handle.max_latitude_degrees)
+        return float(self._handle.max_lat_deg)
 
     @property
-    def min_longitude_degrees(self) -> LongitudeDegrees:
+    def min_lon_deg(self) -> LongitudeDeg:
         """Return the minimum longitude in degrees."""
-        return float(self._handle.min_longitude_degrees)
+        return float(self._handle.min_lon_deg)
 
     @property
-    def max_longitude_degrees(self) -> LongitudeDegrees:
+    def max_lon_deg(self) -> LongitudeDeg:
         """Return the maximum longitude in degrees."""
-        return float(self._handle.max_longitude_degrees)
+        return float(self._handle.max_lon_deg)
 
-    def to_tuple(self) -> BoundingBoxDegrees:
+    def to_tuple(self) -> BoundingBoxDeg:
         """Return the bounding box as a tuple of degrees."""
         return self._handle.to_tuple()
 
@@ -247,9 +247,9 @@ class BoundingBox:
         """Return a string representation of the BoundingBox."""
         return (
             "BoundingBox("
-            f"min_latitude_degrees={self.min_latitude_degrees}, "
-            f"max_latitude_degrees={self.max_latitude_degrees}, "
-            f"min_longitude_degrees={self.min_longitude_degrees}, "
-            f"max_longitude_degrees={self.max_longitude_degrees}"
+            f"min_lat_deg={self.min_lat_deg}, "
+            f"max_lat_deg={self.max_lat_deg}, "
+            f"min_lon_deg={self.min_lon_deg}, "
+            f"max_lon_deg={self.max_lon_deg}"
             ")"
         )

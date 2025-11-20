@@ -14,8 +14,8 @@ from geodist import BoundingBox, InvalidGeometryError, Point, Point3D
 def test_point_accepts_numeric_coordinates() -> None:
     point = Point(12.5, -45)
 
-    assert point.latitude_degrees == 12.5
-    assert point.longitude_degrees == -45.0
+    assert point.lat_deg == 12.5
+    assert point.lon_deg == -45.0
     assert tuple(point) == (12.5, -45.0)
     assert point.to_tuple() == (12.5, -45.0)
 
@@ -59,9 +59,9 @@ def test_point_rejects_bool_inputs() -> None:
 def test_point3d_accepts_altitude_and_matches_tuple() -> None:
     point = Point3D(12.5, -45.0, 250.0)
 
-    assert point.latitude_degrees == 12.5
-    assert point.longitude_degrees == -45.0
-    assert point.altitude_meters == 250.0
+    assert point.lat_deg == 12.5
+    assert point.lon_deg == -45.0
+    assert point.altitude_m == 250.0
     assert tuple(point) == (12.5, -45.0, 250.0)
     assert point.to_tuple() == (12.5, -45.0, 250.0)
 
