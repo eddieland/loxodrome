@@ -7,6 +7,22 @@ rather than treating results as opaque numbers. The Rust crate provides the core
 geodesic kernels; Python bindings will layer ergonomic geometry wrappers once
 the Rust surface settles.
 
+## Distance types at a glance
+
+- **Great-circle geodesic:** Shortest path on a sphere (default WGS84 mean
+  radius). Use for global-scale routing and quick, explainable answers without
+  projection quirks.
+- **Ellipsoidal geodesic:** Same idea on a chosen ellipsoid when you need
+  tighter agreement with geodesy references or region-specific spheroids.
+- **Bearings (initial/final):** Direction of travel at the start and end of a
+  geodesic. Handy for navigation cues, route snapping, or aligning segment
+  splits downstream.
+- **Hausdorff distance (directed and symmetric):** Maximal mismatch between two
+  point sets. Directed asks “how far is A from being covered by B?”; symmetric
+  asks “how far apart are these shapes overall?”
+- **Bounding-box-clipped variants:** Restrict Hausdorff evaluation to a region
+  to ignore distant outliers and focus on the area of interest.
+
 ## Crates & Packages
 
 | Component      | What exists today                                   | Path |
