@@ -1,5 +1,7 @@
 # Python package structure plan (simplified)
 
+**Status:** ✅ Done (Python package surface delivered and aligned with Rust bindings)
+
 ## Purpose
 
 - Keep the Python surface constrained to what the Rust kernels expose while still presenting expressive geometry values (Rust structs surfaced via PyO3) instead of bare tuples.
@@ -57,7 +59,8 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 ## Status Tracking (to be updated by subagent)
 
 - **Latest completed task:** _Surfaced Rust bearings and Hausdorff kernels through the Python bindings, including bounding-box wrappers and stub updates._
-- **Next up:** _Add witness point reporting and any new geometry handles (LineString/Polygon) once Rust exports them._
+- **Overall spec state:** Done; any follow-on geometry or witness-point work will land in new specs.
+- **Next up:** None (spec complete).
 
 ## Lessons Learned (ongoing)
 
