@@ -490,6 +490,81 @@ mod tests {
   }
 
   #[test]
+  fn ellipsoidal_geodesic_matches_geographiclib_references() {
+    struct ReferenceCase {
+      name: &'static str,
+      p1: (f64, f64),
+      p2: (f64, f64),
+      distance_m: f64,
+      initial_bearing_deg: f64,
+      final_bearing_deg: f64,
+    }
+
+    // Reference values produced by GeographicLib 2.0 (Karney) on the WGS84
+    // ellipsoid via Geodesic.WGS84.Inverse.
+    let cases = [
+      ReferenceCase {
+        name: "nyc_london",
+        p1: (40.7128, -74.0060),
+        p2: (51.5074, -0.1278),
+        distance_m: 5_585_233.578_931_3,
+        initial_bearing_deg: 51.241_229_119_512_35,
+        final_bearing_deg: 108.368_998_113_182_64,
+      },
+      ReferenceCase {
+        name: "almost_antipodal",
+        p1: (0.0, 0.0),
+        p2: (-0.5, 179.5),
+        distance_m: 19_936_288.578_965_314,
+        initial_bearing_deg: 154.328_127_131_708_13,
+        final_bearing_deg: 25.672_914_530_058_396,
+      },
+      ReferenceCase {
+        name: "polar_cross",
+        p1: (89.0, 0.0),
+        p2: (85.0, 90.0),
+        distance_m: 569_487.910_026_2804,
+        initial_bearing_deg: 78.718_341_086_595_79,
+        final_bearing_deg: 168.674_679_425_412_28,
+      },
+      ReferenceCase {
+        name: "short_haul_san_francisco",
+        p1: (37.7749, -122.4194),
+        p2: (37.7750, -122.4185),
+        distance_m: 80.063_255_017_781_93,
+        initial_bearing_deg: 82.031_107_905_538_65,
+        final_bearing_deg: 82.031_659_210_920_5,
+      },
+    ];
+
+    for case in cases {
+      let origin = Point::new(case.p1.0, case.p1.1).unwrap();
+      let destination = Point::new(case.p2.0, case.p2.1).unwrap();
+
+      let result = geodesic_with_bearings_on_ellipsoid(Ellipsoid::wgs84(), origin, destination).unwrap();
+      let distance = result.distance().meters();
+      let initial = result.initial_bearing_deg();
+      let final_bearing = result.final_bearing_deg();
+
+      assert!(
+        (distance - case.distance_m).abs() < 1e-6,
+        "distance mismatch for {}",
+        case.name
+      );
+      assert!(
+        (initial - case.initial_bearing_deg).abs() < 5e-8,
+        "initial bearing mismatch for {}",
+        case.name
+      );
+      assert!(
+        (final_bearing - case.final_bearing_deg).abs() < 5e-8,
+        "final bearing mismatch for {}",
+        case.name
+      );
+    }
+  }
+
+  #[test]
   fn computes_chord_distance_on_equator() {
     let origin = Point3D::new(0.0, 0.0, 0.0).unwrap();
     let east = Point3D::new(0.0, 1.0, 0.0).unwrap();
