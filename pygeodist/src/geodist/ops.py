@@ -57,7 +57,12 @@ class HausdorffWitness:
 
 
 def geodesic_distance(origin: Point, destination: Point) -> Meters:
-    """Compute the great-circle distance between two points in meters."""
+    """Compute the great-circle distance between two points in meters.
+
+    Uses the WGS84 mean-radius sphere; expect ~0.3–0.5% error versus a true
+    ellipsoid. Prefer :func:`geodesic_distance_on_ellipsoid` for accuracy-
+    sensitive work or compliance with geodesy references.
+    """
     return float(_geodist_rs.geodesic_distance(origin._handle, destination._handle))
 
 
@@ -83,7 +88,12 @@ def geodesic_distance_3d(origin: Point3D, destination: Point3D) -> Meters:
 
 
 def geodesic_with_bearings(origin: Point, destination: Point) -> GeodesicResult:
-    """Compute great-circle distance and bearings between two points."""
+    """Compute great-circle distance and bearings between two points.
+
+    Uses a mean-radius sphere; prefer
+    :func:`geodesic_with_bearings_on_ellipsoid` for tighter agreement with
+    reference ellipsoids.
+    """
     solution = _geodist_rs.geodesic_with_bearings(origin._handle, destination._handle)
 
     return GeodesicResult(

@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-
-import pytest
 from pytest import approx
-
-if importlib.util.find_spec("geodist._geodist_rs") is None:
-    pytest.skip("Rust extension is not built; skipping distance checks.", allow_module_level=True)
 
 from geodist import (
     BoundingBox,

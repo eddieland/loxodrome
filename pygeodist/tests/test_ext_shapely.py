@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import importlib.util
-
 import pytest
 
 from geodist import BoundingBox, InvalidGeometryError, Point, Point3D
 from geodist.ext.shapely import from_shapely, to_shapely
-
-SHAPELY_AVAILABLE = importlib.util.find_spec("shapely.geometry") is not None
 
 
 def test_roundtrip_converts_between_point_types() -> None:
@@ -71,7 +67,6 @@ def test_from_shapely_rejects_non_rectangular_polygons() -> None:
         from_shapely(triangle)
 
 
-@pytest.mark.skipif(not SHAPELY_AVAILABLE, reason="Shapely is not installed.")
 def test_to_shapely_rejects_unknown_geometries() -> None:
     class Dummy: ...
 

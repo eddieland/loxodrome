@@ -11,7 +11,8 @@ the Rust surface settles.
 
 - **Great-circle geodesic:** Shortest path on a sphere (default WGS84 mean
   radius). Use for global-scale routing and quick, explainable answers without
-  projection quirks.
+  projection quirks; expect ~0.3–0.5% error vs ellipsoidal results and prefer
+  the ellipsoid variants when accuracy matters.
 - **Ellipsoidal geodesic:** Same idea on a chosen ellipsoid when you need
   tighter agreement with geodesy references or region-specific spheroids.
 - **ECEF chord (3D straight-line):** Altitude-aware “as-the-crow-flies” path

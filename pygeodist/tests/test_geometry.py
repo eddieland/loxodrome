@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import importlib.util
 import math
 
 import pytest
-
-if importlib.util.find_spec("geodist._geodist_rs") is None:
-    pytest.skip("Rust extension is not built; skipping geometry checks.", allow_module_level=True)
 
 from geodist import BoundingBox, Ellipsoid, InvalidGeometryError, Point, Point3D
 

@@ -39,6 +39,8 @@ docstring-code-line-length = 88    # Max line length for code blocks in docstrin
 "tests/*" = [
     # D100: Missing module docstring
     "D100",
+    # D101: Missing class docstring
+    "D101",
     # D102: Missing method docstring
     "D102",
     # D103: Missing function docstring
