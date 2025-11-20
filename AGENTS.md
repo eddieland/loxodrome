@@ -32,7 +32,8 @@
 
 ## Specs
 
-- Author new specs under `docs/specs` by copying `docs/specs/_TEMPLATE.md` and keeping its section headings/backlog table structure intact.
+- Author new specs under `docs/specs/proposed/` by copying `docs/specs/_TEMPLATE.md` and keeping its section headings/backlog table structure intact.
+- Maintain the subfolders `proposed/`, `accepted/`, and `obsolete/`; move specs between them as status changes in the same PR that updates the document.
 
 ## Testing Guidelines
 

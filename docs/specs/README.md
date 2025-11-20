@@ -2,6 +2,15 @@
 
 This directory contains software specifications and technical documentation, largely created by Large Language Models (LLMs) to guide development and maintain project context.
 
+## Directory layout
+
+- `proposed/`: New or in-discussion specs start here (including in-progress drafts).
+- `accepted/`: Specs that have been approved and/or implemented; move documents here once decisions are made.
+- `obsolete/`: Superseded or abandoned specs; add a short note in the document about why it was moved.
+- `_TEMPLATE.md` and this README stay at the directory root for easy copying and reference.
+
+When a spec changes status, move the file to the corresponding subfolder in the same PR that updates its `Status` field and content.
+
 ## Purpose
 
 These specifications serve as:
@@ -43,9 +52,9 @@ YYYY-MM-DD_descriptive-name.md
 
 ## Specification Template
 
-To bootstrap new documents quickly, copy [`_TEMPLATE.md`](_TEMPLATE.md) into a dated filename that matches the naming
-scheme above, then replace the placeholders with project-specific details. The template mirrors the structure of our existing
-plans, including purpose, constraints, backlog, risk tracking, and a space for lessons learned.
+To bootstrap new documents quickly, copy [`_TEMPLATE.md`](_TEMPLATE.md) into `proposed/` with a dated filename that matches
+the naming scheme above, then replace the placeholders with project-specific details. The template mirrors the structure of
+our existing plans, including purpose, constraints, backlog, risk tracking, and a space for lessons learned.
 
 ## Intentional Context Compaction
 
