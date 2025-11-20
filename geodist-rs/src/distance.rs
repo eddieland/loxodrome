@@ -216,10 +216,10 @@ fn geodesic_with_bearings_inner(radius_meters: f64, p1: Point, p2: Point) -> Res
   p1.validate()?;
   p2.validate()?;
 
-  let lat1 = p1.latitude.to_radians();
-  let lat2 = p2.latitude.to_radians();
-  let delta_lat = (p2.latitude - p1.latitude).to_radians();
-  let delta_lon = (p2.longitude - p1.longitude).to_radians();
+  let lat1 = p1.lat.to_radians();
+  let lat2 = p2.lat.to_radians();
+  let delta_lat = (p2.lat - p1.lat).to_radians();
+  let delta_lon = (p2.lon - p1.lon).to_radians();
 
   let sin_lat = (delta_lat / 2.0).sin();
   let sin_lon = (delta_lon / 2.0).sin();
@@ -268,19 +268,19 @@ fn geodetic_to_ecef(point: Point3D, ellipsoid: &Ellipsoid) -> Result<(f64, f64, 
   point.validate()?;
   ellipsoid.validate()?;
 
-  let a = ellipsoid.semi_major_axis_meters;
-  let b = ellipsoid.semi_minor_axis_meters;
+  let a = ellipsoid.semi_major_axis_m;
+  let b = ellipsoid.semi_minor_axis_m;
   let eccentricity_squared = 1.0 - (b * b) / (a * a);
 
-  let lat = point.latitude.to_radians();
-  let lon = point.longitude.to_radians();
+  let lat = point.lat.to_radians();
+  let lon = point.lon.to_radians();
   let sin_lat = lat.sin();
   let cos_lat = lat.cos();
   let sin_lon = lon.sin();
   let cos_lon = lon.cos();
 
   let surface_normal_radius = a / (1.0 - eccentricity_squared * sin_lat * sin_lat).sqrt();
-  let altitude = point.altitude_meters;
+  let altitude = point.altitude_m;
 
   let x = (surface_normal_radius + altitude) * cos_lat * cos_lon;
   let y = (surface_normal_radius + altitude) * cos_lat * sin_lon;
@@ -350,10 +350,7 @@ mod tests {
   #[test]
   fn propagates_validation_error() {
     let valid = Point::new(0.0, 0.0).unwrap();
-    let invalid = Point {
-      latitude: 95.0,
-      longitude: 0.0,
-    };
+    let invalid = Point { lat: 95.0, lon: 0.0 };
     let pairs = [(valid, valid), (invalid, valid)];
 
     let result = geodesic_distances(&pairs);
@@ -438,7 +435,7 @@ mod tests {
     let east = Point3D::new(0.0, 1.0, 0.0).unwrap();
 
     let meters = geodesic_distance_3d(origin, east).unwrap().meters();
-    let expected = 2.0 * Ellipsoid::wgs84().semi_major_axis_meters * (0.5_f64.to_radians().sin());
+    let expected = 2.0 * Ellipsoid::wgs84().semi_major_axis_m * (0.5_f64.to_radians().sin());
     assert!((meters - expected).abs() < 1e-6);
   }
 
@@ -454,9 +451,9 @@ mod tests {
   #[test]
   fn geodesic_distance_3d_rejects_invalid_altitude() {
     let nan_point = Point3D {
-      latitude: 0.0,
-      longitude: 0.0,
-      altitude_meters: f64::NAN,
+      lat: 0.0,
+      lon: 0.0,
+      altitude_m: f64::NAN,
     };
     let valid = Point3D::new(0.0, 0.0, 0.0).unwrap();
 

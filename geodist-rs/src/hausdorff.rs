@@ -216,7 +216,7 @@ fn hausdorff_directed_indexed<A: GeodesicAlgorithm>(
   let mut max_min: f64 = 0.0;
 
   for origin in origins {
-    let query = [origin.longitude, origin.latitude];
+    let query = [origin.lon, origin.lat];
     let nearest = index
       .nearest_neighbor(&query)
       .expect("candidate set validated as non-empty");
@@ -245,15 +245,15 @@ impl<'a, A> RTreeObject for IndexedPoint<'a, A> {
   type Envelope = AABB<[f64; 2]>;
 
   fn envelope(&self) -> Self::Envelope {
-    AABB::from_point([self.point.longitude, self.point.latitude])
+    AABB::from_point([self.point.lon, self.point.lat])
   }
 }
 
 impl<'a, A: GeodesicAlgorithm> PointDistance for IndexedPoint<'a, A> {
   fn distance_2(&self, point: &[f64; 2]) -> f64 {
     let query = Point {
-      latitude: point[1],
-      longitude: point[0],
+      lat: point[1],
+      lon: point[0],
     };
 
     match self.algorithm.geodesic_distance(self.point, query) {
@@ -305,10 +305,7 @@ mod tests {
 
   #[test]
   fn propagates_validation_error() {
-    let bad_point = Point {
-      latitude: 95.0,
-      longitude: 0.0,
-    };
+    let bad_point = Point { lat: 95.0, lon: 0.0 };
     let good_point = Point::new(0.0, 0.0).unwrap();
 
     let result = hausdorff_directed(&[bad_point], &[good_point]);
