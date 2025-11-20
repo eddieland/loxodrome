@@ -82,9 +82,10 @@ uv run pytest           # exercises the stub surface
 
 ## Why PyO3 / Maturin?
 
-- PyO3 exposes the Rust kernels directly to Python with predictable type conversions, Rust-side validation, and minimal glue code to keep the Python surface thin.
-- Maturin aligns the build with Cargo, producing Python wheels/SDists without custom setup.py plumbing and slotting cleanly into uv/pip workflows.
-- This pairing keeps the Rust and Python artifacts in lockstep so geometry wrappers stay close to the validated kernels instead of drifting in a reimplementation.
+- PyO3 exposes the Rust kernels directly to Python with predictable type conversions, Rust-side validation, and minimal glue code to keep the Python surface thin (vs CFFI/ctypes shims that tend to grow bespoke adapters).
+- Maturin aligns the build with Cargo, producing Python wheels/SDists without custom setup.py plumbing and with sane multi-platform defaults compared to hand-rolled setuptools-rust configs.
+- Error mapping, type checking, and memory safety all live in Rust, so the Python package is effectively a typed railing over the same kernel instead of a partial reimplementation that can drift.
+- This pairing keeps Rust and Python artifacts in lockstep while fitting cleanly into uv/pip workflows, reducing packaging noise and keeping reviewable diffs focused on kernel changes.
 
 ## Python API scope and non-goals
 
