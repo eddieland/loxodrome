@@ -1,5 +1,7 @@
 # MVP Rust Distance & Hausdorff Kernel
 
+**Status:** ✅ Done (MVP kernel delivered; future tuning/expansion lives in follow-on specs)
+
 ## Purpose
 
 - Define a lean first pass of the Rust kernel focused on point distances and Hausdorff distance for point sets/paths.
@@ -82,7 +84,7 @@ geodist-rs/
 ## Status Tracking (to be updated by subagent)
 
 - **Latest completed task:** _Extended geodesic options_
-- **Next up:** _TBD (backlog complete for now)_
+- **Overall spec state:** Done; follow-on algorithm/accuracy upgrades will be tracked separately.
 
 ## Lessons Learned (ongoing)
 
