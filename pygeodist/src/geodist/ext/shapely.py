@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from .errors import InvalidGeometryError
-from .geometry import Point
+from ..errors import InvalidGeometryError
+from ..geometry import Point
 
 __all__ = ("from_shapely", "to_shapely")
 

@@ -20,18 +20,18 @@ built out; new bindings will be added as the Rust surface stabilizes.
 
 ## Shapely interoperability
 
-Shapely is optional. Install the extra if you want to bridge geodist points with
-Shapely:
+Shapely is optional. Install the extra if you want to bridge geodist points
+with Shapely:
 
 ```bash
 pip install pygeodist[shapely]
 ```
 
-Converters live in `geodist.interop_shapely` and keep imports guarded:
+Converters live in `geodist.ext.shapely` and keep imports guarded:
 
 ```python
 from geodist import Point
-from geodist.interop_shapely import from_shapely, to_shapely
+from geodist.ext.shapely import from_shapely, to_shapely
 
 point = Point(12.5, -45.0)
 shapely_point = to_shapely(point)

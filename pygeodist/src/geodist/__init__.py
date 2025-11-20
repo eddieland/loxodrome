@@ -2,7 +2,7 @@
 
 Exports the constant, error types, and Rust-backed geometry wrappers. Keep this
 module's public API aligned with the compiled extension. Optional Shapely
-interop helpers live in `geodist.interop_shapely`.
+interop helpers live in `geodist.ext.shapely`.
 """
 
 from __future__ import annotations

@@ -8,7 +8,7 @@ if importlib.util.find_spec("geodist._geodist_rs") is None:
     pytest.skip("Rust extension is not built; skipping Shapely interop checks.", allow_module_level=True)
 
 from geodist import InvalidGeometryError, Point
-from geodist.interop_shapely import from_shapely, to_shapely
+from geodist.ext.shapely import from_shapely, to_shapely
 
 SHAPELY_AVAILABLE = importlib.util.find_spec("shapely.geometry") is not None
 
