@@ -291,6 +291,12 @@ impl BoundingBox {
   pub fn contains(&self, point: &Point) -> bool {
     point.lat >= self.min_lat && point.lat <= self.max_lat && point.lon >= self.min_lon && point.lon <= self.max_lon
   }
+
+  /// Check whether a 3D point lies inside the box using latitude/longitude
+  /// only.
+  pub fn contains_3d(&self, point: &Point3D) -> bool {
+    point.lat >= self.min_lat && point.lat <= self.max_lat && point.lon >= self.min_lon && point.lon <= self.max_lon
+  }
 }
 
 /// Validate that latitude is finite and inside `[-90, 90]` degrees.
@@ -451,6 +457,16 @@ mod tests {
     let outside = Point::new(10.0, 0.0).unwrap();
     assert!(bbox.contains(&inside));
     assert!(!bbox.contains(&outside));
+  }
+
+  #[test]
+  fn bounding_box_checks_point3d_coordinates() {
+    let bbox = BoundingBox::new(-1.0, 1.0, -2.0, 2.0).unwrap();
+    let inside = Point3D::new(0.0, 0.0, 250.0).unwrap();
+    let outside = Point3D::new(10.0, 0.0, 0.0).unwrap();
+
+    assert!(bbox.contains_3d(&inside));
+    assert!(!bbox.contains_3d(&outside));
   }
 
   #[test]

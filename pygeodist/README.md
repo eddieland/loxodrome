@@ -40,3 +40,18 @@ round_tripped = from_shapely(shapely_point)
 
 Only `Point` is supported for now; other geometry kinds raise `InvalidGeometryError`
 until the Rust kernels provide matching types.
+
+## Running the demo notebook
+
+A ready-to-run example lives at `notebooks/geodist_usage.ipynb`. Launch it inside
+the uv-managed environment so imports resolve against the local build:
+
+```bash
+cd pygeodist
+uv sync --all-extras
+uv run maturin develop
+uv run --with notebook jupyter notebook notebooks/geodist_usage.ipynb
+```
+
+If you prefer JupyterLab, swap the last line for
+`uv run --with jupyterlab jupyter-lab notebooks/geodist_usage.ipynb`.

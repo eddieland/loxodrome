@@ -14,6 +14,9 @@ the Rust surface settles.
   projection quirks.
 - **Ellipsoidal geodesic:** Same idea on a chosen ellipsoid when you need
   tighter agreement with geodesy references or region-specific spheroids.
+- **ECEF chord (3D straight-line):** Altitude-aware “as-the-crow-flies” path
+  through space using `Point3D` for pairwise distances or Hausdorff over 3D
+  point sets.
 - **Bearings (initial/final):** Direction of travel at the start and end of a
   geodesic. Handy for navigation cues, route snapping, or aligning segment
   splits downstream.
@@ -23,10 +26,10 @@ the Rust surface settles.
 - **Bounding-box-clipped variants:** Restrict Hausdorff evaluation to a region
   to ignore distant outliers and focus on the area of interest.
 
-Note on 3D: Initial support exposes a straight-line chord in ECEF (altitude-aware,
-“as-the-crow-flies” through space) via `Point3D` + `geodesic_distance_3d` on the
-WGS84 ellipsoid. Surface arc with altitude adjustment can be added later if
-needed.
+Note on 3D: 3D helpers expose a straight-line chord in ECEF (altitude-aware,
+“as-the-crow-flies” through space) via `Point3D` + `geodesic_distance_3d` and
+Hausdorff variants on the WGS84 ellipsoid. Surface arc with altitude adjustment
+can be added later if needed; clipping still uses latitude/longitude bounds.
 
 ## Crates & Packages
 
@@ -42,6 +45,7 @@ needed.
 - Batch distance calculation for many point pairs.
 - Initial/final bearing output that reuses the distance kernel.
 - Directed and symmetric Hausdorff distance over point sets, with bounding-box-clipped variants and an automatic switch between an `rstar` index and an O(n*m) fallback for tiny inputs.
+- 3D straight-line distances and Hausdorff evaluation over altitude-bearing point sets, reusing the same validation and clipping semantics (clip on lat/lon).
 - Python bindings expose a Rust-backed `Point` and `BoundingBox` along with `geodesic_distance`, `geodesic_with_bearings`, and Hausdorff helpers. Imports stay guarded so Shapely interop remains optional.
 
 ## Roadmap highlights

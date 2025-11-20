@@ -28,9 +28,13 @@ def test_public_api_reflects_trimmed_surface() -> None:
         "geodesic_distance_3d",
         "geodesic_with_bearings",
         "hausdorff",
+        "hausdorff_3d",
         "hausdorff_clipped",
+        "hausdorff_clipped_3d",
         "hausdorff_directed",
+        "hausdorff_directed_3d",
         "hausdorff_directed_clipped",
+        "hausdorff_directed_clipped_3d",
     )
 
     # Ensure the public Point wrapper is wired to the module import.

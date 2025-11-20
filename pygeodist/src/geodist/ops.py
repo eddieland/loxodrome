@@ -15,9 +15,13 @@ __all__ = (
     "geodesic_distance",
     "geodesic_distance_3d",
     "geodesic_with_bearings",
+    "hausdorff_directed_3d",
     "hausdorff_directed",
+    "hausdorff_3d",
     "hausdorff",
+    "hausdorff_directed_clipped_3d",
     "hausdorff_directed_clipped",
+    "hausdorff_clipped_3d",
     "hausdorff_clipped",
 )
 
@@ -98,6 +102,54 @@ def hausdorff_clipped(a: Iterable[Point], b: Iterable[Point], bounding_box: Boun
     try:
         return float(
             _geodist_rs.hausdorff_clipped([it._handle for it in a], [it._handle for it in b], bounding_box._handle)
+        )
+    except ValueError as exc:
+        raise GeodistError(str(exc)) from exc
+
+
+def hausdorff_directed_3d(a: Iterable[Point3D], b: Iterable[Point3D]) -> Meters:
+    """Directed 3D Hausdorff distance using the ECEF chord metric."""
+    try:
+        return float(_geodist_rs.hausdorff_directed_3d([it._handle for it in a], [it._handle for it in b]))
+    except ValueError as exc:
+        raise GeodistError(str(exc)) from exc
+
+
+def hausdorff_3d(a: Iterable[Point3D], b: Iterable[Point3D]) -> Meters:
+    """Symmetric 3D Hausdorff distance using the ECEF chord metric."""
+    try:
+        return float(_geodist_rs.hausdorff_3d([it._handle for it in a], [it._handle for it in b]))
+    except ValueError as exc:
+        raise GeodistError(str(exc)) from exc
+
+
+def hausdorff_directed_clipped_3d(
+    a: Iterable[Point3D],
+    b: Iterable[Point3D],
+    bounding_box: BoundingBox,
+) -> Meters:
+    """Directed 3D Hausdorff distance after clipping points by latitude/longitude."""
+    try:
+        return float(
+            _geodist_rs.hausdorff_directed_clipped_3d(
+                [it._handle for it in a],
+                [it._handle for it in b],
+                bounding_box._handle,
+            )
+        )
+    except ValueError as exc:
+        raise GeodistError(str(exc)) from exc
+
+
+def hausdorff_clipped_3d(a: Iterable[Point3D], b: Iterable[Point3D], bounding_box: BoundingBox) -> Meters:
+    """Symmetric 3D Hausdorff distance after clipping points by latitude/longitude."""
+    try:
+        return float(
+            _geodist_rs.hausdorff_clipped_3d(
+                [it._handle for it in a],
+                [it._handle for it in b],
+                bounding_box._handle,
+            )
         )
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc

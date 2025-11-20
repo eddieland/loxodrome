@@ -191,6 +191,10 @@ fn map_to_points(handles: &[Point]) -> PyResult<Vec<types::Point>> {
   handles.iter().map(map_to_point).collect::<Result<Vec<_>, _>>()
 }
 
+fn map_to_points3d(handles: &[Point3D]) -> PyResult<Vec<types::Point3D>> {
+  handles.iter().map(map_to_point3d).collect::<Result<Vec<_>, _>>()
+}
+
 fn map_to_bounding_box(handle: &BoundingBox) -> PyResult<types::BoundingBox> {
   types::BoundingBox::new(handle.min_lat, handle.max_lat, handle.min_lon, handle.max_lon)
     .map_err(|err| PyValueError::new_err(err.to_string()))
@@ -268,6 +272,48 @@ fn hausdorff_clipped(a: Vec<Point>, b: Vec<Point>, bounding_box: &BoundingBox) -
     .map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
+#[pyfunction]
+fn hausdorff_directed_3d(a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<f64> {
+  let points_a = map_to_points3d(&a)?;
+  let points_b = map_to_points3d(&b)?;
+
+  hausdorff_kernel::hausdorff_directed_3d(&points_a, &points_b)
+    .map(|distance| distance.meters())
+    .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
+#[pyfunction]
+fn hausdorff_3d(a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<f64> {
+  let points_a = map_to_points3d(&a)?;
+  let points_b = map_to_points3d(&b)?;
+
+  hausdorff_kernel::hausdorff_3d(&points_a, &points_b)
+    .map(|distance| distance.meters())
+    .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
+#[pyfunction]
+fn hausdorff_directed_clipped_3d(a: Vec<Point3D>, b: Vec<Point3D>, bounding_box: &BoundingBox) -> PyResult<f64> {
+  let points_a = map_to_points3d(&a)?;
+  let points_b = map_to_points3d(&b)?;
+  let bbox = map_to_bounding_box(bounding_box)?;
+
+  hausdorff_kernel::hausdorff_directed_clipped_3d(&points_a, &points_b, bbox)
+    .map(|distance| distance.meters())
+    .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
+#[pyfunction]
+fn hausdorff_clipped_3d(a: Vec<Point3D>, b: Vec<Point3D>, bounding_box: &BoundingBox) -> PyResult<f64> {
+  let points_a = map_to_points3d(&a)?;
+  let points_b = map_to_points3d(&b)?;
+  let bbox = map_to_bounding_box(bounding_box)?;
+
+  hausdorff_kernel::hausdorff_clipped_3d(&points_a, &points_b, bbox)
+    .map(|distance| distance.meters())
+    .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
 #[pymodule]
 fn _geodist_rs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("EARTH_RADIUS_METERS", EARTH_RADIUS_METERS)?;
@@ -282,5 +328,9 @@ fn _geodist_rs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_function(wrap_pyfunction!(hausdorff, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_clipped, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_directed_3d, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_3d, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_directed_clipped_3d, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_clipped_3d, m)?)?;
   Ok(())
 }
