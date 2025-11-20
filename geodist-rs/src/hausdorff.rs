@@ -18,15 +18,28 @@ enum HausdorffStrategy {
   Indexed,
 }
 
-/// Directed Hausdorff distance from set `a` to set `b`.
+/// Directed Hausdorff distance from set `a` to set `b` using the default
+/// spherical geodesic.
 ///
-/// Returns the maximum, over all points in `a`, of the minimum distance to any
-/// point in `b`.
+/// Inputs are in degrees. Returns the maximum, over all points in `a`, of the
+/// minimum distance to any point in `b` as a validated [`Distance`].
+///
+/// # Errors
+/// Returns [`GeodistError::EmptyPointSet`] when either slice is empty, or any
+/// validation error surfaced by [`Point::validate`].
 pub fn hausdorff_directed(a: &[Point], b: &[Point]) -> Result<Distance, GeodistError> {
   hausdorff_directed_with(&Spherical::default(), a, b)
 }
 
 /// Directed Hausdorff distance using a custom geodesic algorithm.
+///
+/// Chooses between a naive O(n*m) search for small inputs and an R-tree based
+/// nearest-neighbor lookup for larger sets to bound runtime while keeping
+/// allocations modest.
+///
+/// # Errors
+/// Propagates the same validation and empty-set errors as
+/// [`hausdorff_directed`].
 pub fn hausdorff_directed_with<A: GeodesicAlgorithm>(
   algorithm: &A,
   a: &[Point],
@@ -47,11 +60,24 @@ pub fn hausdorff_directed_with<A: GeodesicAlgorithm>(
 }
 
 /// Symmetric Hausdorff distance between sets `a` and `b`.
+///
+/// Computes the directed Hausdorff distance in both directions with the
+/// default spherical geodesic and returns the larger of the two.
+///
+/// # Errors
+/// Returns [`GeodistError::EmptyPointSet`] when either slice is empty, or any
+/// validation error surfaced by [`Point::validate`].
 pub fn hausdorff(a: &[Point], b: &[Point]) -> Result<Distance, GeodistError> {
   hausdorff_with(&Spherical::default(), a, b)
 }
 
 /// Symmetric Hausdorff distance using a custom geodesic algorithm.
+///
+/// Executes [`hausdorff_directed_with`] in both directions and returns the
+/// dominant leg so asymmetric paths are respected.
+///
+/// # Errors
+/// Propagates the same validation and empty-set errors as [`hausdorff`].
 pub fn hausdorff_with<A: GeodesicAlgorithm>(algorithm: &A, a: &[Point], b: &[Point]) -> Result<Distance, GeodistError> {
   let forward = hausdorff_directed_with(algorithm, a, b)?;
   let reverse = hausdorff_directed_with(algorithm, b, a)?;
@@ -60,6 +86,13 @@ pub fn hausdorff_with<A: GeodesicAlgorithm>(algorithm: &A, a: &[Point], b: &[Poi
 }
 
 /// Directed Hausdorff distance after clipping both sets by a bounding box.
+///
+/// Points outside `bounding_box` are discarded prior to the directed distance
+/// calculation.
+///
+/// # Errors
+/// Returns [`GeodistError::EmptyPointSet`] when filtering removes all points
+/// from either slice, or any validation error surfaced by [`Point::validate`].
 pub fn hausdorff_directed_clipped(
   a: &[Point],
   b: &[Point],
@@ -69,6 +102,13 @@ pub fn hausdorff_directed_clipped(
 }
 
 /// Directed Hausdorff distance with custom algorithm after bounding box filter.
+///
+/// Applies the same clipping semantics as [`hausdorff_directed_clipped`] and
+/// delegates distance measurements to a supplied geodesic algorithm.
+///
+/// # Errors
+/// Propagates the same validation and empty-set errors as
+/// [`hausdorff_directed_clipped`].
 pub fn hausdorff_directed_clipped_with<A: GeodesicAlgorithm>(
   algorithm: &A,
   a: &[Point],
@@ -81,12 +121,26 @@ pub fn hausdorff_directed_clipped_with<A: GeodesicAlgorithm>(
 }
 
 /// Symmetric Hausdorff distance after clipping both sets by a bounding box.
+///
+/// Filters inputs using `bounding_box` and computes the symmetric Hausdorff
+/// distance with the default spherical geodesic.
+///
+/// # Errors
+/// Returns [`GeodistError::EmptyPointSet`] when filtering removes all points
+/// from either slice, or any validation error surfaced by [`Point::validate`].
 pub fn hausdorff_clipped(a: &[Point], b: &[Point], bounding_box: BoundingBox) -> Result<Distance, GeodistError> {
   hausdorff_clipped_with(&Spherical::default(), a, b, bounding_box)
 }
 
 /// Symmetric Hausdorff distance with custom algorithm after bounding box
 /// filter.
+///
+/// Applies the same clipping semantics as [`hausdorff_clipped`] while allowing
+/// custom geodesic strategies (e.g., different radii or ellipsoid handling).
+///
+/// # Errors
+/// Propagates the same validation and empty-set errors as
+/// [`hausdorff_clipped`].
 pub fn hausdorff_clipped_with<A: GeodesicAlgorithm>(
   algorithm: &A,
   a: &[Point],
