@@ -436,10 +436,7 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("InvalidDistanceError", py.get_type::<InvalidDistanceError>())?;
   m.add("InvalidRadiusError", py.get_type::<InvalidRadiusError>())?;
   m.add("InvalidEllipsoidError", py.get_type::<InvalidEllipsoidError>())?;
-  m.add(
-    "InvalidBoundingBoxError",
-    py.get_type::<InvalidBoundingBoxError>(),
-  )?;
+  m.add("InvalidBoundingBoxError", py.get_type::<InvalidBoundingBoxError>())?;
   m.add("EmptyPointSetError", py.get_type::<EmptyPointSetError>())?;
   m.add_class::<Point>()?;
   m.add_class::<Point3D>()?;
