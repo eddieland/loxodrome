@@ -10,7 +10,12 @@
           "column": 3,
           "severity": 4,
           "message": 5
-        },
+        }
+      ]
+    },
+    {
+      "owner": "mypy-geodist-nocol",
+      "pattern": [
         {
           "regexp": "^(.+):(\\d+): (error|note): (.+)$",
           "file": 1,
