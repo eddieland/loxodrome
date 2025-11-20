@@ -18,6 +18,15 @@ class InvalidEllipsoidError(GeodistError): ...
 class InvalidBoundingBoxError(GeodistError): ...
 class EmptyPointSetError(GeodistError): ...
 
+class Ellipsoid:
+    semi_major_axis_m: float
+    semi_minor_axis_m: float
+
+    def __init__(self, semi_major_axis_m: float, semi_minor_axis_m: float) -> None: ...
+    @staticmethod
+    def wgs84() -> Ellipsoid: ...
+    def to_tuple(self) -> tuple[float, float]: ...
+
 class Point:
     lat: float
     lon: float
@@ -34,21 +43,21 @@ class Point3D:
     def to_tuple(self) -> tuple[float, float, float]: ...
 
 class GeodesicSolution:
-    distance_meters: float
-    initial_bearing_degrees: float
-    final_bearing_degrees: float
+    distance_m: float
+    initial_bearing_deg: float
+    final_bearing_deg: float
 
     def to_tuple(self) -> tuple[float, float, float]: ...
 
 class HausdorffDirectedWitness:
-    distance_meters: float
+    distance_m: float
     origin_index: int
     candidate_index: int
 
     def to_tuple(self) -> tuple[float, int, int]: ...
 
 class HausdorffWitness:
-    distance_meters: float
+    distance_m: float
     a_to_b: HausdorffDirectedWitness
     b_to_a: HausdorffDirectedWitness
 
@@ -76,7 +85,9 @@ class BoundingBox:
     def to_tuple(self) -> tuple[float, float, float, float]: ...
 
 def geodesic_distance(p1: Point, p2: Point) -> float: ...
+def geodesic_distance_on_ellipsoid(p1: Point, p2: Point, ellipsoid: Ellipsoid) -> float: ...
 def geodesic_with_bearings(p1: Point, p2: Point) -> GeodesicSolution: ...
+def geodesic_with_bearings_on_ellipsoid(p1: Point, p2: Point, ellipsoid: Ellipsoid) -> GeodesicSolution: ...
 def geodesic_distance_3d(p1: Point3D, p2: Point3D) -> float: ...
 def hausdorff_directed(a: list[Point], b: list[Point]) -> HausdorffDirectedWitness: ...
 def hausdorff(a: list[Point], b: list[Point]) -> HausdorffWitness: ...
@@ -102,6 +113,7 @@ __all__ = [
     "InvalidEllipsoidError",
     "InvalidBoundingBoxError",
     "EmptyPointSetError",
+    "Ellipsoid",
     "Point",
     "Point3D",
     "GeodesicSolution",
@@ -109,8 +121,10 @@ __all__ = [
     "HausdorffWitness",
     "BoundingBox",
     "geodesic_distance",
+    "geodesic_distance_on_ellipsoid",
     "geodesic_distance_3d",
     "geodesic_with_bearings",
+    "geodesic_with_bearings_on_ellipsoid",
     "hausdorff_directed",
     "hausdorff",
     "hausdorff_directed_clipped",

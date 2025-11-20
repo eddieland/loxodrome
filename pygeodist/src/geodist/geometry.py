@@ -13,10 +13,68 @@ from .types import Point as PointTuple
 from .types import Point3D as Point3DTuple
 
 __all__ = (
+    "Ellipsoid",
     "Point",
     "Point3D",
     "BoundingBox",
 )
+
+
+class Ellipsoid:
+    """Immutable ellipsoid definition expressed in meters."""
+
+    __slots__ = ("_handle",)
+
+    def __init__(self, semi_major_axis_m: float, semi_minor_axis_m: float) -> None:
+        """Initialize an ellipsoid from semi-major/minor axes in meters."""
+        _validate_axis(semi_minor_axis_m, name="semi_minor_axis_m")
+        _validate_axis(semi_major_axis_m, name="semi_major_axis_m")
+
+        if semi_major_axis_m < semi_minor_axis_m:
+            raise InvalidGeometryError(
+                f"semi_major_axis_m must be >= semi_minor_axis_m: {semi_major_axis_m!r} < {semi_minor_axis_m!r}"
+            )
+
+        self._handle = _geodist_rs.Ellipsoid(semi_major_axis_m, semi_minor_axis_m)
+
+    @classmethod
+    def _from_handle(cls, handle: _geodist_rs.Ellipsoid) -> "Ellipsoid":
+        instance = cls.__new__(cls)
+        instance._handle = handle
+        return instance
+
+    @classmethod
+    def wgs84(cls) -> "Ellipsoid":
+        """Return the WGS84 reference ellipsoid."""
+        return cls._from_handle(_geodist_rs.Ellipsoid.wgs84())
+
+    @property
+    def semi_major_axis_m(self) -> float:
+        """Semi-major axis in meters."""
+        return float(self._handle.semi_major_axis_m)
+
+    @property
+    def semi_minor_axis_m(self) -> float:
+        """Semi-minor axis in meters."""
+        return float(self._handle.semi_minor_axis_m)
+
+    def to_tuple(self) -> tuple[float, float]:
+        """Return a tuple representation `(semi_major_axis_m, semi_minor_axis_m)`."""
+        return self._handle.to_tuple()
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterate over the semi-major and semi-minor axes."""
+        yield from self.to_tuple()
+
+    def __repr__(self) -> str:
+        """Return a string representation of the ellipsoid."""
+        return f"Ellipsoid(semi_major_axis_m={self.semi_major_axis_m}, semi_minor_axis_m={self.semi_minor_axis_m})"
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another Ellipsoid."""
+        if not isinstance(other, Ellipsoid):
+            return NotImplemented
+        return self.to_tuple() == other.to_tuple()
 
 
 class Point:
@@ -114,6 +172,15 @@ _LATITUDE_MIN_DEGREES = -90.0
 _LATITUDE_MAX_DEGREES = 90.0
 _LONGITUDE_MIN_DEGREES = -180.0
 _LONGITUDE_MAX_DEGREES = 180.0
+
+
+def _validate_axis(value: float, *, name: str) -> None:
+    """Convert an axis length into a finite positive float."""
+    if not isfinite(value):
+        raise InvalidGeometryError(f"{name} must be finite: {value!r}")
+
+    if value <= 0.0:
+        raise InvalidGeometryError(f"{name} must be greater than 0 meters: {value!r}")
 
 
 def _coerce_coordinate(

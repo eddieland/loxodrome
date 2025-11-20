@@ -5,8 +5,10 @@
 
 use crate::{Distance, GeodistError, Point};
 
+mod geographiclib;
 mod spherical;
 
+pub use geographiclib::Geographiclib;
 pub use spherical::Spherical;
 
 /// Strategy for computing geodesic distance between two points.
