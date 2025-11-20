@@ -30,6 +30,7 @@ lint: ## Run linters, formatters, and type checks
 
 .PHONY: test
 test: ## Run tests
+	uv run maturin develop
 	uv run pytest
 
 .PHONY: fmt
