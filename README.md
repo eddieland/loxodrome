@@ -146,6 +146,11 @@ round_tripped = from_shapely(shapely_point)
 - Near-term additions (subject to Rust readiness): witness point reporting on all metrics, more geometry wrappers, and vectorized/batched helpers.
 - The Typer CLI is a developer smoke test, not a user-facing entrypoint; keep automation and scripting pinned to the Python API instead.
 
+## Releases
+
+- Tag `vMAJOR.MINOR.PATCH` to trigger `.github/workflows/release.yml`; it defaults to dry-run and uploads crate and wheel artifacts for inspection.
+- See `docs/publishing.md` for the release checklist, live-mode guards, and artifact locations.
+
 ## Project Status
 
 The project is in early active development. APIs may evolve until the initial
