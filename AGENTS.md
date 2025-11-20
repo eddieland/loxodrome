@@ -21,6 +21,7 @@
 - Module layout: keep Python public API definitions at the top of each `.py` file and place `_private` helpers after them so important entry points stay discoverable.
 - Keep the PyO3 extension stub in sync: update `pygeodist/src/geodist/_geodist_rs.pyi` whenever the Rust-exposed API changes so typings mirror the compiled bindings.
 - Rust: Standard Rustfmt defaults; favor small modules and explicit imports. Use snake_case for fns/vars, CamelCase for types/traits.
+- Geospatial naming: use ISO-backed abbreviations for recurring concepts—`lat`/`lon` for latitude/longitude (ISO 6709) and `_deg` suffix for degree-valued angles (ISO 80000-3); prefer `_rad` when explicitly radians to avoid ambiguity. Keep these abbreviations consistent across code, tests, and docs.
 
 ## Documentation
 

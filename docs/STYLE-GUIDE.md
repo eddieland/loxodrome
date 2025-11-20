@@ -13,6 +13,7 @@
 
 - Target Python 3.10+; mypy runs in strict mode over `src` and `tests` (`make lint`).
 - Naming: snake_case for functions/vars, PascalCase for classes, SCREAMING_SNAKE_CASE for module constants.
+- Geospatial naming: use ISO-backed abbreviations—`lat`/`lon` for latitude/longitude (ISO 6709) and `_deg` for degree-valued angles (ISO 80000-3); prefer `_rad` when explicitly radians to avoid ambiguity. Apply consistently across code, tests, and docs.
 - Docstrings: add for public or non-obvious items; use Google style; skip trivial data holders/pass-throughs.
 - Attributes (including module constants): document with Sphinx-style `#: ...` comments so autodoc captures them.
 - Layout: put public API objects at the top of each `.py` file and follow with `_private` helpers to keep important entry points obvious.
