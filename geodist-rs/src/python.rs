@@ -7,10 +7,13 @@
 //! Keep bindings in sync: any changes here must be mirrored in
 //! `pygeodist/src/geodist/_geodist_rs.pyi` in the same commit.
 #![allow(unsafe_op_in_unsafe_fn)]
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
+use pyo3::wrap_pyfunction;
 
 use crate::constants::EARTH_RADIUS_METERS;
+use crate::{distance, types};
 
 /// Geographic point expressed in degrees.
 ///
@@ -56,9 +59,26 @@ impl Point {
   }
 }
 
+fn map_to_point(handle: &Point) -> PyResult<types::Point> {
+  types::Point::new(handle.latitude_degrees, handle.longitude_degrees)
+    .map_err(|err| PyValueError::new_err(err.to_string()))
+}
+
+#[pyfunction]
+fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
+  let origin = map_to_point(p1)?;
+  let destination = map_to_point(p2)?;
+
+  let distance =
+    distance::geodesic_distance(origin, destination).map_err(|err| PyValueError::new_err(err.to_string()))?;
+
+  Ok(distance.meters())
+}
+
 #[pymodule]
 fn _geodist_rs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("EARTH_RADIUS_METERS", EARTH_RADIUS_METERS)?;
   m.add_class::<Point>()?;
+  m.add_function(wrap_pyfunction!(geodesic_distance, m)?)?;
   Ok(())
 }

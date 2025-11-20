@@ -15,7 +15,9 @@ class Point:
     def __init__(self, latitude_degrees: float, longitude_degrees: float) -> None: ...
     def to_tuple(self) -> tuple[float, float]: ...
 
-__all__ = ["EARTH_RADIUS_METERS", "Point"]
+def geodesic_distance(p1: Point, p2: Point) -> float: ...
+
+__all__ = ["EARTH_RADIUS_METERS", "Point", "geodesic_distance"]
 
 # Upcoming Rust-backed geometry handles will mirror the Rust structs once exposed:
 # - Additional geometry containers will be added incrementally once the kernels are wired.

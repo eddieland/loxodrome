@@ -56,8 +56,8 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _Documented non-goals, Shapely scope, and future Python surface areas gated on Rust readiness._
-- **Next up:** _Wait for new Rust kernels to land, then mirror them with minimal Python wrappers._
+- **Latest completed task:** _Mirrored the Rust `geodesic_distance` kernel into the Python bindings with typed wrappers and stubs._
+- **Next up:** _Expose additional kernel results (bearings, Hausdorff) once Rust surfaces them._
 
 ## Lessons Learned (ongoing)
 
@@ -68,3 +68,4 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 - _Interop helpers must be explicit and optional to avoid dragging in heavy dependencies by default._
 - _Validate coordinate ranges in Python before constructing Rust handles to keep the extension surface minimal._
 - _Guard optional dependencies both at import time and in tests so the dev workflow stays predictable even without optional extras._
+- _Map Rust kernel errors to Python exceptions once to keep wrappers small and messages consistent._

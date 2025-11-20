@@ -21,6 +21,7 @@ def test_public_api_reflects_trimmed_surface() -> None:
         "GeodistError",
         "InvalidGeometryError",
         "Point",
+        "geodesic_distance",
     )
 
     # Ensure the public Point wrapper is wired to the module import.

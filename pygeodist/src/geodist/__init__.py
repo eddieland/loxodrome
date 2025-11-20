@@ -12,6 +12,7 @@ from typing import Final
 from . import _geodist_rs
 from .errors import GeodistError, InvalidGeometryError
 from .geometry import Point
+from .ops import geodesic_distance
 
 EARTH_RADIUS_METERS: Final[float] = float(_geodist_rs.EARTH_RADIUS_METERS)
 
@@ -20,4 +21,5 @@ __all__ = (
     "GeodistError",
     "InvalidGeometryError",
     "Point",
+    "geodesic_distance",
 )

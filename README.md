@@ -89,10 +89,10 @@ uv run pytest           # exercises the stub surface
 
 ## Python API scope and non-goals
 
-- Public exports today: `EARTH_RADIUS_METERS` and error types (`GeodistError` and the derived error classes).
+- Public exports today: `EARTH_RADIUS_METERS`, error types (`GeodistError` and `InvalidGeometryError`), a Rust-backed `Point` wrapper, and `geodesic_distance(point_a, point_b)` returning meters on the WGS84 mean radius.
 - Non-goals: mirroring Shapely parity, accepting arbitrary geometry tuples, or silently coercing unsupported geometry kinds.
 - Interop guidance: install the `shapely` extra when needed; conversions are explicit, guard imports, and currently error for any geometry beyond `Point` instead of guessing.
-- Future Python surface (no promised dates): wrappers around the Rust kernels for geodesic distance/bearings, Hausdorff (including bounding-box-clipped variants), and `LineString`/`Polygon` once Rust exposes them (gated on Rust readiness to avoid drift).
+- Future Python surface (no promised dates): wrappers around additional kernel results (bearings, Hausdorff, bounding-box variants) and `LineString`/`Polygon` once Rust exposes them (gated on Rust readiness to avoid drift).
 - The Typer CLI is for local development only and should not be treated as a user-facing entrypoint.
 
 ## Project Status
