@@ -1,5 +1,7 @@
 # Ellipsoidal Geodesic Upgrade
 
+**Status:** ✅ Done
+
 ## Purpose
 
 - Deliver true ellipsoidal geodesic computations (distance + bearings) so results align with geodesy references (e.g., WGS84) rather than mean-radius approximations.
