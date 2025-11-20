@@ -7,7 +7,10 @@ from math import isfinite
 
 from . import _geodist_rs
 from .errors import InvalidGeometryError
-from .types import AltitudeM, BoundingBox as BoundingBoxTuple, Latitude, Longitude, Point as PointTuple, Point3D as Point3DTuple
+from .types import AltitudeM, Latitude, Longitude
+from .types import BoundingBox as BoundingBoxTuple
+from .types import Point as PointTuple
+from .types import Point3D as Point3DTuple
 
 __all__ = (
     "Point",
@@ -98,13 +101,7 @@ class Point3D:
 
     def __repr__(self) -> str:
         """Return a string representation of the 3D point."""
-        return (
-            "Point3D("
-            f"lat={self.lat}, "
-            f"lon={self.lon}, "
-            f"altitude_m={self.altitude_m}"
-            ")"
-        )
+        return f"Point3D(lat={self.lat}, lon={self.lon}, altitude_m={self.altitude_m})"
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another Point3D."""
@@ -196,13 +193,9 @@ class BoundingBox:
         max_longitude = _coerce_longitude(max_lon)
 
         if min_latitude > max_latitude:
-            raise InvalidGeometryError(
-                f"min_lat must not exceed max_lat: {min_latitude} > {max_latitude}"
-            )
+            raise InvalidGeometryError(f"min_lat must not exceed max_lat: {min_latitude} > {max_latitude}")
         if min_longitude > max_longitude:
-            raise InvalidGeometryError(
-                f"min_lon must not exceed max_lon: {min_longitude} > {max_longitude}"
-            )
+            raise InvalidGeometryError(f"min_lon must not exceed max_lon: {min_longitude} > {max_longitude}")
 
         self._handle = _geodist_rs.BoundingBox(
             min_latitude,

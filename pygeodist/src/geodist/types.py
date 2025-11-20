@@ -19,11 +19,11 @@ Point3D = tuple[Latitude, Longitude, AltitudeM]
 BoundingBox = tuple[Latitude, Latitude, Longitude, Longitude]
 
 __all__ = (
-  "AltitudeM",
-  "Latitude",
-  "Longitude",
-  "Meters",
-  "Point",
-  "Point3D",
-  "BoundingBox",
+    "AltitudeM",
+    "Latitude",
+    "Longitude",
+    "Meters",
+    "Point",
+    "Point3D",
+    "BoundingBox",
 )

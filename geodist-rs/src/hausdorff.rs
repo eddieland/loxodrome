@@ -232,7 +232,8 @@ pub fn hausdorff_clipped_with<A: GeodesicAlgorithm>(
 ///
 /// # Errors
 /// Returns [`GeodistError::EmptyPointSet`] when filtering removes all points
-/// from either slice, or any validation error surfaced by [`Point3D::validate`].
+/// from either slice, or any validation error surfaced by
+/// [`Point3D::validate`].
 pub fn hausdorff_directed_clipped_3d(
   a: &[Point3D],
   b: &[Point3D],
@@ -268,7 +269,8 @@ pub fn hausdorff_directed_clipped_3d_on_ellipsoid(
 ///
 /// # Errors
 /// Returns [`GeodistError::EmptyPointSet`] when filtering removes all points
-/// from either slice, or any validation error surfaced by [`Point3D::validate`].
+/// from either slice, or any validation error surfaced by
+/// [`Point3D::validate`].
 pub fn hausdorff_clipped_3d(a: &[Point3D], b: &[Point3D], bounding_box: BoundingBox) -> Result<Distance, GeodistError> {
   hausdorff_clipped_3d_on_ellipsoid(Ellipsoid::wgs84(), a, b, bounding_box)
 }
