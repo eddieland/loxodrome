@@ -7,7 +7,6 @@
 //! Keep bindings in sync: any changes here must be mirrored in
 //! `pygeodist/src/geodist/_geodist_rs.pyi` in the same commit.
 #![allow(unsafe_op_in_unsafe_fn)]
-#![allow(unexpected_cfgs)]
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
@@ -430,18 +429,18 @@ fn hausdorff_clipped_3d(a: Vec<Point3D>, b: Vec<Point3D>, bounding_box: &Boundin
 #[pymodule]
 fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("EARTH_RADIUS_METERS", EARTH_RADIUS_METERS)?;
-  m.add("GeodistError", py.get_type_bound::<GeodistError>())?;
-  m.add("InvalidLatitudeError", py.get_type_bound::<InvalidLatitudeError>())?;
-  m.add("InvalidLongitudeError", py.get_type_bound::<InvalidLongitudeError>())?;
-  m.add("InvalidAltitudeError", py.get_type_bound::<InvalidAltitudeError>())?;
-  m.add("InvalidDistanceError", py.get_type_bound::<InvalidDistanceError>())?;
-  m.add("InvalidRadiusError", py.get_type_bound::<InvalidRadiusError>())?;
-  m.add("InvalidEllipsoidError", py.get_type_bound::<InvalidEllipsoidError>())?;
+  m.add("GeodistError", py.get_type::<GeodistError>())?;
+  m.add("InvalidLatitudeError", py.get_type::<InvalidLatitudeError>())?;
+  m.add("InvalidLongitudeError", py.get_type::<InvalidLongitudeError>())?;
+  m.add("InvalidAltitudeError", py.get_type::<InvalidAltitudeError>())?;
+  m.add("InvalidDistanceError", py.get_type::<InvalidDistanceError>())?;
+  m.add("InvalidRadiusError", py.get_type::<InvalidRadiusError>())?;
+  m.add("InvalidEllipsoidError", py.get_type::<InvalidEllipsoidError>())?;
   m.add(
     "InvalidBoundingBoxError",
-    py.get_type_bound::<InvalidBoundingBoxError>(),
+    py.get_type::<InvalidBoundingBoxError>(),
   )?;
-  m.add("EmptyPointSetError", py.get_type_bound::<EmptyPointSetError>())?;
+  m.add("EmptyPointSetError", py.get_type::<EmptyPointSetError>())?;
   m.add_class::<Point>()?;
   m.add_class::<Point3D>()?;
   m.add_class::<GeodesicSolution>()?;
