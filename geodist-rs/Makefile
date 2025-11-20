@@ -18,11 +18,7 @@ fmt: ## Format code using rustfmt
 
 .PHONY: lint
 lint: ## Run clippy for linting
-	cargo clippy --workspace -- -D warnings
-
-.PHONY: lint-all
-lint-all: ## Run clippy with all features
-	cargo clippy --all-features -- -D warnings
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
 
 .PHONY: bench
 bench: ## Run benchmarks (requires bench feature)

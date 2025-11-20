@@ -1,6 +1,7 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use geodist_rs::{Point, geodesic_distance, hausdorff};
+use std::hint::black_box;
 
+use criterion::{Criterion, criterion_group, criterion_main};
+use geodist_rs::{Point, geodesic_distance, hausdorff};
 fn bench_geodesic_distance(c: &mut Criterion) {
   let new_york = Point::new(40.7128, -74.0060).unwrap();
   let london = Point::new(51.5074, -0.1278).unwrap();

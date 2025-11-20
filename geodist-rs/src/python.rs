@@ -49,7 +49,7 @@ impl From<hausdorff_kernel::HausdorffDirectedWitness> for HausdorffDirectedWitne
 #[pymethods]
 impl HausdorffDirectedWitness {
   /// Return a tuple `(distance_meters, origin_index, candidate_index)`.
-  pub fn to_tuple(&self) -> (f64, usize, usize) {
+  pub const fn to_tuple(&self) -> (f64, usize, usize) {
     (self.distance_meters, self.origin_index, self.candidate_index)
   }
 
@@ -86,7 +86,7 @@ impl From<hausdorff_kernel::HausdorffWitness> for HausdorffWitness {
 impl HausdorffWitness {
   /// Return a tuple `(distance_meters, a_to_b, b_to_a)` where the latter two
   /// are witness tuples.
-  pub fn to_tuple(&self) -> (f64, (f64, usize, usize), (f64, usize, usize)) {
+  pub const fn to_tuple(&self) -> (f64, (f64, usize, usize), (f64, usize, usize)) {
     (self.distance_meters, self.a_to_b.to_tuple(), self.b_to_a.to_tuple())
   }
 
@@ -122,12 +122,12 @@ impl Point {
   /// Arguments are expected in degrees and are stored as-is; callers should
   /// validate ranges in the Python layer.
   #[new]
-  pub fn new(lat: f64, lon: f64) -> Self {
+  pub const fn new(lat: f64, lon: f64) -> Self {
     Self { lat, lon }
   }
 
   /// Return a tuple representation for convenient unpacking.
-  pub fn to_tuple(&self) -> (f64, f64) {
+  pub const fn to_tuple(&self) -> (f64, f64) {
     (self.lat, self.lon)
   }
 
@@ -159,12 +159,12 @@ impl Point3D {
   /// Arguments are expected in degrees for latitude/longitude and meters for
   /// altitude; callers should validate ranges in the Python layer.
   #[new]
-  pub fn new(lat: f64, lon: f64, altitude_m: f64) -> Self {
+  pub const fn new(lat: f64, lon: f64, altitude_m: f64) -> Self {
     Self { lat, lon, altitude_m }
   }
 
   /// Return a tuple representation for convenient unpacking.
-  pub fn to_tuple(&self) -> (f64, f64, f64) {
+  pub const fn to_tuple(&self) -> (f64, f64, f64) {
     (self.lat, self.lon, self.altitude_m)
   }
 
@@ -202,7 +202,7 @@ impl From<distance::GeodesicSolution> for GeodesicSolution {
 #[pymethods]
 impl GeodesicSolution {
   /// Return a tuple `(meters, initial_bearing_deg, final_bearing_deg)`.
-  pub fn to_tuple(&self) -> (f64, f64, f64) {
+  pub const fn to_tuple(&self) -> (f64, f64, f64) {
     (
       self.distance_meters,
       self.initial_bearing_degrees,
@@ -249,7 +249,7 @@ impl BoundingBox {
   }
 
   /// Return a tuple representation for convenient unpacking.
-  pub fn to_tuple(&self) -> (f64, f64, f64, f64) {
+  pub const fn to_tuple(&self) -> (f64, f64, f64, f64) {
     (self.min_lat, self.max_lat, self.min_lon, self.max_lon)
   }
 

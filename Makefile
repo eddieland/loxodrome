@@ -18,59 +18,30 @@ help: ## Display this help
 all: fmt lint test build ## Run formatting, linting, tests, and builds for all projects
 
 .PHONY: lint
-lint: lint-python lint-rust ## Run linting for Python and Rust projects
-
-.PHONY: fmt
-fmt: fmt-python fmt-rust ## Format Python and Rust code
-
-.PHONY: test
-test: test-python test-rust ## Run tests for Python and Rust projects
-
-.PHONY: build
-build: build-python build-rust ## Build Python and Rust projects
-
-### Python
-
-.PHONY: lint-python
-lint-python: ## Run Python linters and type checks
+lint:
 	$(MAKE) -C $(PY_DIR) lint
-
-.PHONY: fmt-python
-fmt-python: ## Format Python code
-	$(MAKE) -C $(PY_DIR) fmt
-
-.PHONY: test-python
-test-python: ## Run Python tests
-	$(MAKE) -C $(PY_DIR) test
-
-.PHONY: build-python
-build-python: ## Build Python artifacts
-	$(MAKE) -C $(PY_DIR) build
-
-### Rust
-
-.PHONY: lint-rust
-lint-rust: ## Run Rust lints
 	$(MAKE) -C $(RS_DIR) lint
 
-.PHONY: fmt-rust
-fmt-rust: ## Format Rust code
+.PHONY: fmt
+fmt: ## Format Python and Rust code
+	$(MAKE) -C $(PY_DIR) fmt
 	$(MAKE) -C $(RS_DIR) fmt
+
+.PHONY: test
+test: ## Run tests for Python and Rust projects
+	$(MAKE) -C $(PY_DIR) test
+	$(MAKE) -C $(RS_DIR) test
+
+.PHONY: build
+build: ## Build Python and Rust projects
+	$(MAKE) -C $(PY_DIR) build
+	$(MAKE) -C $(RS_DIR) build
+
+### Rust
 
 .PHONY: bench-rust
 bench-rust: ## Run Rust benchmarks
 	$(MAKE) -C $(RS_DIR) bench
-
-.PHONY: test-rust
-test-rust: ## Run Rust tests
-	$(MAKE) -C $(RS_DIR) test
-
-.PHONY: build-rust
-build-rust: ## Build Rust artifacts
-	$(MAKE) -C $(RS_DIR) build
-
-.PHONY: bench
-bench: bench-rust ## Run Rust benchmarks
 
 ### Analysis
 
@@ -79,3 +50,6 @@ cloc: ## Count lines of code using Docker
 	docker run --rm -v "$(PWD):/tmp" aldanial/cloc /tmp \
 		--exclude-dir=.git,.github,.twig,example,docs,ref,target \
 		--fullpath
+
+.PHONY: bench
+bench: bench-rust ## Run Rust benchmarks
