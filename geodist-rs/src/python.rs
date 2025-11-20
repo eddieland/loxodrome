@@ -166,10 +166,7 @@ fn map_to_point(handle: &Point) -> PyResult<types::Point> {
 }
 
 fn map_to_points(handles: &[Point]) -> PyResult<Vec<types::Point>> {
-  handles
-    .iter()
-    .map(map_to_point)
-    .collect::<Result<Vec<_>, _>>()
+  handles.iter().map(map_to_point).collect::<Result<Vec<_>, _>>()
 }
 
 fn map_to_bounding_box(handle: &BoundingBox) -> PyResult<types::BoundingBox> {

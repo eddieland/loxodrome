@@ -23,30 +23,17 @@ __all__ = (
 
 @dataclass(frozen=True)
 class GeodesicResult:
+    """Result of a geodesic computation including distance and bearings."""
+
     distance_meters: Meters
     initial_bearing_degrees: float
     final_bearing_degrees: float
 
 
-def _to_handle(point: Point) -> _geodist_rs.Point:
-    if not isinstance(point, Point):
-        raise TypeError(f"geodesic_distance expects Point arguments, got {type(point).__name__}")
-    return point._handle
-
-
-def _to_handles(points: Iterable[Point], *, argument_name: str) -> list[_geodist_rs.Point]:
-    handles: list[_geodist_rs.Point] = []
-    for point in points:
-        if not isinstance(point, Point):
-            raise TypeError(f"{argument_name} expects Point instances, got {type(point).__name__}")
-        handles.append(point._handle)
-    return handles
-
-
 def geodesic_distance(origin: Point, destination: Point) -> Meters:
     """Compute the great-circle distance between two points in meters."""
     try:
-        return float(_geodist_rs.geodesic_distance(_to_handle(origin), _to_handle(destination)))
+        return float(_geodist_rs.geodesic_distance(origin._handle, destination._handle))
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 
@@ -54,7 +41,7 @@ def geodesic_distance(origin: Point, destination: Point) -> Meters:
 def geodesic_with_bearings(origin: Point, destination: Point) -> GeodesicResult:
     """Compute great-circle distance and bearings between two points."""
     try:
-        solution = _geodist_rs.geodesic_with_bearings(_to_handle(origin), _to_handle(destination))
+        solution = _geodist_rs.geodesic_with_bearings(origin._handle, destination._handle)
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 
@@ -67,31 +54,18 @@ def geodesic_with_bearings(origin: Point, destination: Point) -> GeodesicResult:
 
 def hausdorff_directed(a: Iterable[Point], b: Iterable[Point]) -> Meters:
     """Directed Hausdorff distance from set `a` to set `b`."""
-    handles_a = _to_handles(a, argument_name="hausdorff_directed first argument")
-    handles_b = _to_handles(b, argument_name="hausdorff_directed second argument")
     try:
-        return float(_geodist_rs.hausdorff_directed(handles_a, handles_b))
+        return float(_geodist_rs.hausdorff_directed([it._handle for it in a], [it._handle for it in b]))
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 
 
 def hausdorff(a: Iterable[Point], b: Iterable[Point]) -> Meters:
     """Symmetric Hausdorff distance between two point sets."""
-    handles_a = _to_handles(a, argument_name="hausdorff first argument")
-    handles_b = _to_handles(b, argument_name="hausdorff second argument")
     try:
-        return float(_geodist_rs.hausdorff(handles_a, handles_b))
+        return float(_geodist_rs.hausdorff([it._handle for it in a], [it._handle for it in b]))
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
-
-
-def _validate_bounding_box(bounding_box: BoundingBox) -> _geodist_rs.BoundingBox:
-    if not isinstance(bounding_box, BoundingBox):
-        raise TypeError(
-            "bounding_box must be a geodist BoundingBox, "
-            f"got {type(bounding_box).__name__}"
-        )
-    return bounding_box._handle
 
 
 def hausdorff_directed_clipped(
@@ -100,21 +74,21 @@ def hausdorff_directed_clipped(
     bounding_box: BoundingBox,
 ) -> Meters:
     """Directed Hausdorff distance after clipping both sets to a bounding box."""
-    handles_a = _to_handles(a, argument_name="hausdorff_directed_clipped first argument")
-    handles_b = _to_handles(b, argument_name="hausdorff_directed_clipped second argument")
-    bbox_handle = _validate_bounding_box(bounding_box)
     try:
-        return float(_geodist_rs.hausdorff_directed_clipped(handles_a, handles_b, bbox_handle))
+        return float(
+            _geodist_rs.hausdorff_directed_clipped(
+                [it._handle for it in a], [it._handle for it in b], bounding_box._handle
+            )
+        )
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 
 
 def hausdorff_clipped(a: Iterable[Point], b: Iterable[Point], bounding_box: BoundingBox) -> Meters:
     """Symmetric Hausdorff distance after clipping both sets to a bounding box."""
-    handles_a = _to_handles(a, argument_name="hausdorff_clipped first argument")
-    handles_b = _to_handles(b, argument_name="hausdorff_clipped second argument")
-    bbox_handle = _validate_bounding_box(bounding_box)
     try:
-        return float(_geodist_rs.hausdorff_clipped(handles_a, handles_b, bbox_handle))
+        return float(
+            _geodist_rs.hausdorff_clipped([it._handle for it in a], [it._handle for it in b], bounding_box._handle)
+        )
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc

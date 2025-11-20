@@ -50,10 +50,10 @@ def test_point_rejects_non_finite(latitude: float, longitude: float) -> None:
 
 def test_point_rejects_bool_inputs() -> None:
     with pytest.raises(InvalidGeometryError):
-        Point(True, 0.0)  # type: ignore[arg-type]
+        Point(True, 0.0)
 
     with pytest.raises(InvalidGeometryError):
-        Point(0.0, False)  # type: ignore[arg-type]
+        Point(0.0, False)
 
 
 def test_bounding_box_accepts_ordered_coordinates() -> None:
@@ -71,4 +71,4 @@ def test_bounding_box_rejects_invalid_ranges() -> None:
 
 def test_bounding_box_rejects_bool_inputs() -> None:
     with pytest.raises(InvalidGeometryError):
-        BoundingBox(True, 10.0, -20.0, 20.0)  # type: ignore[arg-type]
+        BoundingBox(True, 10.0, -20.0, 20.0)
