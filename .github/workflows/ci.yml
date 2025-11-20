@@ -1,13 +1,14 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
+  # Temporarily disable main branch push builds until publishing is wired up.
+  # push:
+  #   branches: [main]
   pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
