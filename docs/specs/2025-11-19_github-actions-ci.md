@@ -30,13 +30,13 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Draft CI workflow skeleton for PRs/pushes with concurrency configured | Workflow triggers on PR and `main` pushes; concurrency group cancels in-flight PR runs but not `main`; lint/test steps stubbed | Use `concurrency` with branch check; ensure PR reuse | 📝 |
-| P0 | Implement Python matrix job running `make lint` and `make test` for 3.10/3.12 on ubuntu | Jobs create uv environment, install deps, run lint and tests; all commands succeed on Ubuntu | macOS/Windows deferred until/if needed | 📝 |
-| P0 | Validate Rust components build in CI (if needed by bindings) | Cargo build step passes on ubuntu | Skip other OS until needed; document rationale | 📝 |
-| P1 | Add benchmark job separated from gating lint/test | Benchmark job runs on every PR on ubuntu, uploads logs/artifacts; does not block PR merge failures by default | PR-scope execution chosen to catch regressions early | 📝 |
-| P1 | Add caching for Python (uv) and Cargo to reduce runtime | Cache keys include OS, Python version, lockfiles; cache restores validated | Verify cache paths per OS; avoid stale cache issues | 📝 |
-| P2 | Add reporting/annotations for lint/test failures | Ruff/mypy/pytest outputs surfaced as annotations | Platform-neutral approach | 📝 |
-| P3 | Explore optional code coverage publishing | Coverage artifacts kept for local download; no external services yet | Future enhancement | 📝 |
+| P0 | Draft CI workflow skeleton for PRs/pushes with concurrency configured | Workflow triggers on PR and `main` pushes; concurrency group cancels in-flight PR runs but not `main`; lint/test steps stubbed | Use `concurrency` with branch check; ensure PR reuse | ✅ |
+| P0 | Implement Python matrix job running `make lint` and `make test` for 3.10/3.12 on ubuntu | Jobs create uv environment, install deps, run lint and tests; all commands succeed on Ubuntu | macOS/Windows deferred until/if needed | ✅ |
+| P0 | Validate Rust components build in CI (if needed by bindings) | Cargo build step passes on ubuntu | Skip other OS until needed; document rationale | ✅ |
+| P1 | Add benchmark job separated from gating lint/test | Benchmark job runs on every PR on ubuntu, uploads logs/artifacts; does not block PR merge failures by default | PR-scope execution chosen to catch regressions early | ✅ |
+| P1 | Add caching for Python (uv) and Cargo to reduce runtime | Cache keys include OS, Python version, lockfiles; cache restores validated | Verify cache paths per OS; avoid stale cache issues | ✅ |
+| P2 | Add reporting/annotations for lint/test failures | Ruff/mypy/pytest outputs surfaced as annotations | Platform-neutral approach | ✅ |
+| P3 | Explore optional code coverage publishing | Coverage artifacts kept for local download; no external services yet | Future enhancement | ✅ |
 
 _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
@@ -53,9 +53,9 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _None yet._
-- **Next up:** _Draft workflow skeleton with concurrency and matrix definition._
+- **Latest completed task:** _CI workflow covering Python matrix lint/test, Rust build, benches, caching, annotations, and optional coverage artifacts._
+- **Next up:** _Monitor runtime/cache hit rates; extend matrix to macOS/Windows if needed._
 
 ## Lessons Learned (ongoing)
 
-- _TBD as implementation progresses._
+- uv and cargo caches keyed by lockfiles keep rebuilds tolerable while letting nightly toolchain installs remain simple; keep metadata hashes in keys to avoid stale caches.

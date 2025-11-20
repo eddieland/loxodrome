@@ -1,0 +1,29 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "mypy-geodist",
+      "pattern": [
+        {
+          "regexp": "^(.+):(\\d+):(\\d+): (error|note): (.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      ]
+    },
+    {
+      "owner": "mypy-geodist-nocol",
+      "pattern": [
+        {
+          "regexp": "^(.+):(\\d+): (error|note): (.+)$",
+          "file": 1,
+          "line": 2,
+          "severity": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}
