@@ -104,6 +104,7 @@ jobs:
 
       - name: Determine uv cache directory
         id: uv-cache-dir
+        shell: bash
         run: |
           set -euo pipefail
           if ! command -v uv >/dev/null 2>&1; then
@@ -268,6 +269,7 @@ jobs:
 
       - name: Determine uv cache directory
         id: uv-cache-dir
+        shell: bash
         run: |
           set -euo pipefail
           if ! command -v uv >/dev/null 2>&1; then
