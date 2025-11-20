@@ -56,26 +56,7 @@ jobs:
       - name: Check manifest versions match tag
         env:
           RELEASE_VERSION: ${{ steps.discover.outputs.version }}
-        run: |
-          python - <<'PY'
-            import sys
-            import tomllib
-            from pathlib import Path
-
-            target = "${RELEASE_VERSION}"
-            cargo_version = tomllib.loads(Path("geodist-rs/Cargo.toml").read_text())["package"]["version"]
-            py_version = tomllib.loads(Path("pygeodist/pyproject.toml").read_text())["project"]["version"]
-
-            errors = []
-            if cargo_version != target:
-                errors.append(f"geodist-rs version {cargo_version} does not match tag {target}")
-            if py_version != target:
-                errors.append(f"pygeodist version {py_version} does not match tag {target}")
-
-            if errors:
-                sys.stderr.write("\n".join(errors) + "\n")
-                sys.exit(1)
-          PY
+        run: python .github/scripts/check_manifest_versions.py
 
       - name: Resolve publish mode
         id: mode
