@@ -57,6 +57,10 @@ lint-rust: ## Run Rust lints
 fmt-rust: ## Format Rust code
 	$(MAKE) -C $(RS_DIR) fmt
 
+.PHONY: bench-rust
+bench-rust: ## Run Rust benchmarks
+	$(MAKE) -C $(RS_DIR) bench
+
 .PHONY: test-rust
 test-rust: ## Run Rust tests
 	$(MAKE) -C $(RS_DIR) test
@@ -64,6 +68,9 @@ test-rust: ## Run Rust tests
 .PHONY: build-rust
 build-rust: ## Build Rust artifacts
 	$(MAKE) -C $(RS_DIR) build
+
+.PHONY: bench
+bench: bench-rust ## Run Rust benchmarks
 
 ### Analysis
 

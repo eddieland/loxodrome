@@ -24,6 +24,10 @@ lint: ## Run clippy for linting
 lint-all: ## Run clippy with all features
 	cargo clippy --all-features -- -D warnings
 
+.PHONY: bench
+bench: ## Run benchmarks (requires bench feature)
+	cargo bench --features bench
+
 .PHONY: test
 test: build ## Run tests
 	cargo nextest run --workspace

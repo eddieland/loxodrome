@@ -29,7 +29,10 @@ fn bench_hausdorff(c: &mut Criterion) {
 
   c.bench_function("hausdorff/simple_paths", |b| {
     b.iter(|| {
-      let meters = hausdorff(black_box(&path_a), black_box(&path_b)).unwrap().meters();
+      let meters = hausdorff(black_box(&path_a), black_box(&path_b))
+        .unwrap()
+        .distance()
+        .meters();
       black_box(meters);
     })
   });
