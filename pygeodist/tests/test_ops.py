@@ -10,6 +10,7 @@ if importlib.util.find_spec("geodist._geodist_rs") is None:
 
 from geodist import (
     BoundingBox,
+    Ellipsoid,
     GeodesicResult,
     HausdorffDirectedWitness,
     HausdorffWitness,
@@ -17,7 +18,9 @@ from geodist import (
     Point3D,
     geodesic_distance,
     geodesic_distance_3d,
+    geodesic_distance_on_ellipsoid,
     geodesic_with_bearings,
+    geodesic_with_bearings_on_ellipsoid,
     hausdorff,
     hausdorff_3d,
     hausdorff_clipped,
@@ -36,6 +39,15 @@ def test_geodesic_distance_matches_rust_kernel() -> None:
     assert geodesic_distance(origin, east) == approx(111_195.080_233_532_9)
 
 
+def test_geodesic_distance_on_ellipsoid_matches_wgs84() -> None:
+    origin = Point(0.0, 0.0)
+    east = Point(0.0, 1.0)
+
+    expected = 111_319.490_793_273_57
+    assert geodesic_distance_on_ellipsoid(origin, east) == approx(expected)
+    assert geodesic_distance_on_ellipsoid(origin, east, Ellipsoid.wgs84()) == approx(expected)
+
+
 def test_geodesic_distance_3d_matches_vertical_offset() -> None:
     ground = Point3D(0.0, 0.0, 0.0)
     elevated = Point3D(0.0, 0.0, 150.0)
@@ -49,9 +61,20 @@ def test_geodesic_with_bearings_returns_distance_and_angles() -> None:
 
     result = geodesic_with_bearings(origin, east)
     assert isinstance(result, GeodesicResult)
-    assert result.distance_meters == approx(111_195.080_233_532_9)
-    assert result.initial_bearing_degrees == approx(90.0)
-    assert result.final_bearing_degrees == approx(90.0)
+    assert result.distance_m == approx(111_195.080_233_532_9)
+    assert result.initial_bearing_deg == approx(90.0)
+    assert result.final_bearing_deg == approx(90.0)
+
+
+def test_geodesic_with_bearings_on_ellipsoid_returns_distance_and_angles() -> None:
+    origin = Point(0.0, 0.0)
+    east = Point(0.0, 1.0)
+
+    result = geodesic_with_bearings_on_ellipsoid(origin, east)
+    assert isinstance(result, GeodesicResult)
+    assert result.distance_m == approx(111_319.490_793_273_57)
+    assert result.initial_bearing_deg == approx(90.0)
+    assert result.final_bearing_deg == approx(90.0)
 
 
 def test_hausdorff_and_directed_match_expected_distances() -> None:
@@ -63,8 +86,8 @@ def test_hausdorff_and_directed_match_expected_distances() -> None:
 
     assert isinstance(symmetric, HausdorffWitness)
     assert isinstance(directed, HausdorffDirectedWitness)
-    assert symmetric.distance_meters == approx(geodesic_distance(origin, east))
-    assert directed.distance_meters == approx(geodesic_distance(origin, east))
+    assert symmetric.distance_m == approx(geodesic_distance(origin, east))
+    assert directed.distance_m == approx(geodesic_distance(origin, east))
     assert directed.origin_index == 0
     assert directed.candidate_index == 0
 
@@ -76,17 +99,17 @@ def test_hausdorff_clipped_filters_points() -> None:
 
     # Without clipping, A includes the origin so the maximum mismatch is origin->east.
     directed = hausdorff_directed([origin, east], [east])
-    assert directed.distance_meters == approx(geodesic_distance(origin, east))
+    assert directed.distance_m == approx(geodesic_distance(origin, east))
     assert directed.origin_index == 0
     assert directed.candidate_index == 0
 
     # Clipping removes the origin, so both sets reduce to [east] and the distance collapses to 0.
     clipped_directed = hausdorff_directed_clipped([origin, east], [east], east_only_box)
     clipped_symmetric = hausdorff_clipped([origin, east], [east], east_only_box)
-    assert clipped_directed.distance_meters == approx(0.0)
+    assert clipped_directed.distance_m == approx(0.0)
     assert clipped_directed.origin_index == 1
     assert clipped_directed.candidate_index == 0
-    assert clipped_symmetric.distance_meters == approx(0.0)
+    assert clipped_symmetric.distance_m == approx(0.0)
 
 
 def test_hausdorff_3d_matches_vertical_delta() -> None:
@@ -95,8 +118,8 @@ def test_hausdorff_3d_matches_vertical_delta() -> None:
 
     directed = hausdorff_directed_3d([ground], [elevated])
     symmetric = hausdorff_3d([ground], [elevated])
-    assert directed.distance_meters == approx(200.0)
-    assert symmetric.distance_meters == approx(200.0)
+    assert directed.distance_m == approx(200.0)
+    assert symmetric.distance_m == approx(200.0)
 
 
 def test_hausdorff_3d_clipped_filters_points() -> None:
@@ -106,5 +129,5 @@ def test_hausdorff_3d_clipped_filters_points() -> None:
 
     symmetric = hausdorff_clipped_3d([inside, outside], [inside], box)
     directed = hausdorff_directed_clipped_3d([inside, outside], [inside], box)
-    assert symmetric.distance_meters == approx(0.0)
-    assert directed.distance_meters == approx(0.0)
+    assert symmetric.distance_m == approx(0.0)
+    assert directed.distance_m == approx(0.0)

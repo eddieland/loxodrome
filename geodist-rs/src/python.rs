@@ -29,7 +29,7 @@ create_exception!(_geodist_rs, EmptyPointSetError, GeodistError);
 #[derive(Debug, Clone)]
 pub struct HausdorffDirectedWitness {
   #[pyo3(get)]
-  distance_meters: f64,
+  distance_m: f64,
   #[pyo3(get)]
   origin_index: usize,
   #[pyo3(get)]
@@ -39,7 +39,7 @@ pub struct HausdorffDirectedWitness {
 impl From<hausdorff_kernel::HausdorffDirectedWitness> for HausdorffDirectedWitness {
   fn from(value: hausdorff_kernel::HausdorffDirectedWitness) -> Self {
     Self {
-      distance_meters: value.distance().meters(),
+      distance_m: value.distance().meters(),
       origin_index: value.origin_index(),
       candidate_index: value.candidate_index(),
     }
@@ -48,15 +48,15 @@ impl From<hausdorff_kernel::HausdorffDirectedWitness> for HausdorffDirectedWitne
 
 #[pymethods]
 impl HausdorffDirectedWitness {
-  /// Return a tuple `(distance_meters, origin_index, candidate_index)`.
+  /// Return a tuple `(distance_m, origin_index, candidate_index)`.
   pub const fn to_tuple(&self) -> (f64, usize, usize) {
-    (self.distance_meters, self.origin_index, self.candidate_index)
+    (self.distance_m, self.origin_index, self.candidate_index)
   }
 
   fn __repr__(&self) -> String {
     format!(
-      "HausdorffDirectedWitness(distance_meters={}, origin_index={}, candidate_index={})",
-      self.distance_meters, self.origin_index, self.candidate_index
+      "HausdorffDirectedWitness(distance_m={}, origin_index={}, candidate_index={})",
+      self.distance_m, self.origin_index, self.candidate_index
     )
   }
 }
@@ -65,7 +65,7 @@ impl HausdorffDirectedWitness {
 #[derive(Debug, Clone)]
 pub struct HausdorffWitness {
   #[pyo3(get)]
-  distance_meters: f64,
+  distance_m: f64,
   #[pyo3(get)]
   a_to_b: HausdorffDirectedWitness,
   #[pyo3(get)]
@@ -75,7 +75,7 @@ pub struct HausdorffWitness {
 impl From<hausdorff_kernel::HausdorffWitness> for HausdorffWitness {
   fn from(value: hausdorff_kernel::HausdorffWitness) -> Self {
     Self {
-      distance_meters: value.distance().meters(),
+      distance_m: value.distance().meters(),
       a_to_b: value.a_to_b().into(),
       b_to_a: value.b_to_a().into(),
     }
@@ -84,21 +84,68 @@ impl From<hausdorff_kernel::HausdorffWitness> for HausdorffWitness {
 
 #[pymethods]
 impl HausdorffWitness {
-  /// Return a tuple `(distance_meters, a_to_b, b_to_a)` where the latter two
+  /// Return a tuple `(distance_m, a_to_b, b_to_a)` where the latter two
   /// are witness tuples.
   pub const fn to_tuple(&self) -> (f64, (f64, usize, usize), (f64, usize, usize)) {
-    (self.distance_meters, self.a_to_b.to_tuple(), self.b_to_a.to_tuple())
+    (self.distance_m, self.a_to_b.to_tuple(), self.b_to_a.to_tuple())
   }
 
   fn __repr__(&self) -> String {
     let (dist, (a_dist, a_origin, a_candidate), (b_dist, b_origin, b_candidate)) = self.to_tuple();
     format!(
-      "HausdorffWitness(distance_meters={}, a_to_b=(distance_meters={}, origin_index={}, candidate_index={}), \
-       b_to_a=(distance_meters={}, origin_index={}, candidate_index={}))",
+      "HausdorffWitness(distance_m={}, a_to_b=(distance_m={}, origin_index={}, candidate_index={}), \
+       b_to_a=(distance_m={}, origin_index={}, candidate_index={}))",
       dist, a_dist, a_origin, a_candidate, b_dist, b_origin, b_candidate
     )
   }
 }
+
+/// Oblate ellipsoid expressed via semi-major/minor axes (meters).
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct Ellipsoid {
+  #[pyo3(get)]
+  semi_major_axis_m: f64,
+  #[pyo3(get)]
+  semi_minor_axis_m: f64,
+}
+
+#[pymethods]
+impl Ellipsoid {
+  /// Create a new ellipsoid from semi-major/minor axes in meters.
+  #[new]
+  pub fn new(semi_major_axis_m: f64, semi_minor_axis_m: f64) -> PyResult<Self> {
+    let ellipsoid = map_geodist_result(types::Ellipsoid::new(semi_major_axis_m, semi_minor_axis_m))?;
+    Ok(Self {
+      semi_major_axis_m: ellipsoid.semi_major_axis_m,
+      semi_minor_axis_m: ellipsoid.semi_minor_axis_m,
+    })
+  }
+
+  /// WGS84 ellipsoid parameters in meters.
+  #[staticmethod]
+  pub const fn wgs84() -> Self {
+    let ellipsoid = types::Ellipsoid::wgs84();
+    Self {
+      semi_major_axis_m: ellipsoid.semi_major_axis_m,
+      semi_minor_axis_m: ellipsoid.semi_minor_axis_m,
+    }
+  }
+
+  /// Return a tuple `(semi_major_axis_m, semi_minor_axis_m)`.
+  pub const fn to_tuple(&self) -> (f64, f64) {
+    (self.semi_major_axis_m, self.semi_minor_axis_m)
+  }
+
+  /// Human-friendly representation for debugging.
+  fn __repr__(&self) -> String {
+    format!(
+      "Ellipsoid(semi_major_axis_m={}, semi_minor_axis_m={})",
+      self.semi_major_axis_m, self.semi_minor_axis_m
+    )
+  }
+}
+
 /// Geographic point expressed in degrees.
 ///
 /// The struct is intentionally minimal and opaque to Python callers;
@@ -182,19 +229,19 @@ impl Point3D {
 #[derive(Debug, Clone)]
 pub struct GeodesicSolution {
   #[pyo3(get)]
-  distance_meters: f64,
+  distance_m: f64,
   #[pyo3(get)]
-  initial_bearing_degrees: f64,
+  initial_bearing_deg: f64,
   #[pyo3(get)]
-  final_bearing_degrees: f64,
+  final_bearing_deg: f64,
 }
 
 impl From<distance::GeodesicSolution> for GeodesicSolution {
   fn from(value: distance::GeodesicSolution) -> Self {
     Self {
-      distance_meters: value.distance().meters(),
-      initial_bearing_degrees: value.initial_bearing_degrees(),
-      final_bearing_degrees: value.final_bearing_degrees(),
+      distance_m: value.distance().meters(),
+      initial_bearing_deg: value.initial_bearing_deg(),
+      final_bearing_deg: value.final_bearing_deg(),
     }
   }
 }
@@ -203,18 +250,14 @@ impl From<distance::GeodesicSolution> for GeodesicSolution {
 impl GeodesicSolution {
   /// Return a tuple `(meters, initial_bearing_deg, final_bearing_deg)`.
   pub const fn to_tuple(&self) -> (f64, f64, f64) {
-    (
-      self.distance_meters,
-      self.initial_bearing_degrees,
-      self.final_bearing_degrees,
-    )
+    (self.distance_m, self.initial_bearing_deg, self.final_bearing_deg)
   }
 
   /// Human-friendly representation for debugging.
   fn __repr__(&self) -> String {
     format!(
-      "GeodesicSolution(distance_meters={}, initial_bearing_degrees={}, final_bearing_degrees={})",
-      self.distance_meters, self.initial_bearing_degrees, self.final_bearing_degrees
+      "GeodesicSolution(distance_m={}, initial_bearing_deg={}, final_bearing_deg={})",
+      self.distance_m, self.initial_bearing_deg, self.final_bearing_deg
     )
   }
 }
@@ -306,6 +349,13 @@ fn map_to_bounding_box(handle: &BoundingBox) -> PyResult<types::BoundingBox> {
   ))
 }
 
+fn map_to_ellipsoid(handle: &Ellipsoid) -> PyResult<types::Ellipsoid> {
+  map_geodist_result(types::Ellipsoid::new(
+    handle.semi_major_axis_m,
+    handle.semi_minor_axis_m,
+  ))
+}
+
 #[pyfunction]
 fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
   let origin = map_to_point(p1)?;
@@ -317,12 +367,34 @@ fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
 }
 
 #[pyfunction]
+fn geodesic_distance_on_ellipsoid(p1: &Point, p2: &Point, ellipsoid: &Ellipsoid) -> PyResult<f64> {
+  let origin = map_to_point(p1)?;
+  let destination = map_to_point(p2)?;
+  let ellipsoid = map_to_ellipsoid(ellipsoid)?;
+
+  distance::geodesic_distance_on_ellipsoid(ellipsoid, origin, destination)
+    .map(|distance| distance.meters())
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
 fn geodesic_with_bearings(p1: &Point, p2: &Point) -> PyResult<GeodesicSolution> {
   let origin = map_to_point(p1)?;
   let destination = map_to_point(p2)?;
   let solution = map_geodist_result(distance::geodesic_with_bearings(origin, destination))?;
 
   Ok(solution.into())
+}
+
+#[pyfunction]
+fn geodesic_with_bearings_on_ellipsoid(p1: &Point, p2: &Point, ellipsoid: &Ellipsoid) -> PyResult<GeodesicSolution> {
+  let origin = map_to_point(p1)?;
+  let destination = map_to_point(p2)?;
+  let ellipsoid = map_to_ellipsoid(ellipsoid)?;
+
+  distance::geodesic_with_bearings_on_ellipsoid(ellipsoid, origin, destination)
+    .map(GeodesicSolution::from)
+    .map_err(map_geodist_error)
 }
 
 #[pyfunction]
@@ -438,6 +510,7 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("InvalidEllipsoidError", py.get_type::<InvalidEllipsoidError>())?;
   m.add("InvalidBoundingBoxError", py.get_type::<InvalidBoundingBoxError>())?;
   m.add("EmptyPointSetError", py.get_type::<EmptyPointSetError>())?;
+  m.add_class::<Ellipsoid>()?;
   m.add_class::<Point>()?;
   m.add_class::<Point3D>()?;
   m.add_class::<GeodesicSolution>()?;
@@ -445,7 +518,9 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_class::<HausdorffDirectedWitness>()?;
   m.add_class::<HausdorffWitness>()?;
   m.add_function(wrap_pyfunction!(geodesic_distance, m)?)?;
+  m.add_function(wrap_pyfunction!(geodesic_distance_on_ellipsoid, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings, m)?)?;
+  m.add_function(wrap_pyfunction!(geodesic_with_bearings_on_ellipsoid, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_distance_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff, m)?)?;

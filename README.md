@@ -41,7 +41,7 @@ can be added later if needed; clipping still uses latitude/longitude bounds.
 ## What works now
 
 - Rust kernels expose validated geodesic primitives (`Point`, `Distance`, `Ellipsoid`, `BoundingBox`) with strict input checking.
-- Great-circle distance on a spherical Earth (WGS84 mean radius by default) plus custom radius/ellipsoid helpers.
+- Great-circle distance on a spherical Earth (WGS84 mean radius by default) plus ellipsoidal inverse geodesics (WGS84 by default) using a GeographicLib-backed solver and custom radius/ellipsoid helpers.
 - Batch distance calculation for many point pairs.
 - Initial/final bearing output that reuses the distance kernel.
 - Directed and symmetric Hausdorff distance over point sets with witness reporting (distance + realizing indices), with bounding-box-clipped variants and an automatic switch between an `rstar` index and an O(n*m) fallback for tiny inputs.
@@ -97,10 +97,10 @@ origin = Point(0.0, 0.0)
 east = Point(0.0, 1.0)
 
 result = geodesic_with_bearings(origin, east)
-print(result.distance_meters, result.initial_bearing_degrees, result.final_bearing_degrees)
+print(result.distance_m, result.initial_bearing_deg, result.final_bearing_deg)
 
 witness = hausdorff([origin], [east])
-print(witness.distance_meters, witness.a_to_b.origin_index, witness.a_to_b.candidate_index)
+print(witness.distance_m, witness.a_to_b.origin_index, witness.a_to_b.candidate_index)
 ```
 
 ## Shapely interoperability
@@ -135,7 +135,7 @@ round_tripped = from_shapely(shapely_point)
 
 ## Python API scope and non-goals
 
-- What ships today: `EARTH_RADIUS_METERS`, error types (`GeodistError`, `InvalidGeometryError`), Rust-backed `Point`/`BoundingBox`, geodesic distance + bearings, and Hausdorff (directed and clipped) helpers. Everything routes directly to the Rust kernels—there is no pure-Python fallback.
+- What ships today: `EARTH_RADIUS_METERS`, error types (`GeodistError`, `InvalidGeometryError`), Rust-backed `Ellipsoid`/`Point`/`BoundingBox`, spherical + ellipsoidal geodesic distance/bearings, and Hausdorff (directed and clipped) helpers. Everything routes directly to the Rust kernels—there is no pure-Python fallback.
 - Explicit non-goals:
   - Full Shapely/GeoPandas parity or best-effort shims for arbitrary geometry tuples, GeoJSON-like dicts, or mixed dimensionality.
   - Implicit projections, datum shifts, or axis-order guessing; inputs are lat/lon degrees on WGS84 unless an explicit ellipsoid/radius is provided.

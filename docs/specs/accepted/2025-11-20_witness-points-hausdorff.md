@@ -32,7 +32,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Define Rust return structs/enums for witness output across 2D, 3D, and clipped Hausdorff | Chosen shape (e.g., `HausdorffWitness { distance_meters, a_idx, b_idx }`, symmetric returns both directions) documented with RustDoc | Decide whether symmetric returns two structs or a combined type; confirm index semantics post-clipping | ✅ Done |
+| P0 | Define Rust return structs/enums for witness output across 2D, 3D, and clipped Hausdorff | Chosen shape (e.g., `HausdorffWitness { distance_m, a_idx, b_idx }`, symmetric returns both directions) documented with RustDoc | Decide whether symmetric returns two structs or a combined type; confirm index semantics post-clipping | ✅ Done |
 | P0 | Implement witness-capable kernels in Rust | All Hausdorff paths (directed/symmetric, clipped/unclipped, 3D) compute witness pair and return typed result; errors for empty/fully clipped sets; tests added | Keep indexed vs naive strategy; ensure clipped paths track source indices | ✅ Done |
 | P0 | Expose witness outputs through PyO3 and update `_geodist_rs.pyi` | PyO3 module exports new witness-returning functions/structs; stub updated; Python type hints align | Decide Python result type (frozen dataclass or NamedTuple); adjust existing helpers if that yields a better API | ✅ Done |
 | P1 | Add Python-side tests and docs | Pytest coverage for witness returns across variants; README + notebook mention how to access witnesses | Include negative cases (empty, fully clipped) and ensure indices match original iterable order | ✅ Done |

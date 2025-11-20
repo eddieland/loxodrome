@@ -44,7 +44,7 @@ mod distance;
 mod hausdorff;
 mod types;
 
-pub use algorithms::{GeodesicAlgorithm, Spherical};
+pub use algorithms::{GeodesicAlgorithm, Geographiclib, Spherical};
 pub use constants::EARTH_RADIUS_METERS;
 pub use distance::{
   GeodesicSolution, geodesic_distance, geodesic_distance_3d, geodesic_distance_3d_on_ellipsoid,

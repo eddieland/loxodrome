@@ -31,9 +31,9 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | PoC: integrate `geographiclib-rs` via adapter | Add a thin adapter trait around `geographiclib-rs` inverse solver; wire `geodesic_*_on_ellipsoid` + bearings to it; keep spherical path unchanged | Build behind minimal dependency; guarded by tests | 📝 |
+| P0 | PoC: integrate `geographiclib-rs` via adapter | Add a thin adapter trait around `geographiclib-rs` inverse solver; wire `geodesic_*_on_ellipsoid` + bearings to it; keep spherical path unchanged | Build behind minimal dependency; guarded by tests | ✅ Done |
 | P0 | Reference fixtures + validation | Add authoritative test pairs (GeographicLib tables) incl. antipodal/polar/short-haul; verify meters/bearings match within tolerance | Cite sources; codify tolerances | 📝 |
-| P0 | Expose PoC through PyO3 + Python API | Extend `python.rs`, `_geodist_rs.pyi`, and `ops.py` to surface ellipsoidal variants; keep spherical exports intact | Pytest coverage for new functions and error paths | 📝 |
+| P0 | Expose PoC through PyO3 + Python API | Extend `python.rs`, `_geodist_rs.pyi`, and `ops.py` to surface ellipsoidal variants; keep spherical exports intact | Pytest coverage for new functions and error paths | ✅ Done |
 | P1 | Bench PoC vs spherical | Bench single + batch calls; record perf delta and accuracy; decide if PoC is acceptable for initial ship | Document findings in spec/README | 📝 |
 | P1 | Decide fork/vendoring strategy | Based on PoC results + upstream health, choose: keep dep, vendor fork, or build in-tree solver | Decision logged with rationale | 📝 |
 | P2 | Deprecation messaging | If mean-radius remains default, add doc/docs clarifying approximation and steering to ellipsoid | Non-breaking; doc-level first | 📝 |
@@ -55,8 +55,8 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _None yet; specification drafted._
-- **Next up:** _Choose solver algorithm and reference fixtures (P0)._
+- **Latest completed task:** PoC adapter + Python exposure using `geographiclib-rs`.
+- **Next up:** Reference fixtures and validation coverage (P0).
 
 ## Lessons Learned (ongoing)
 

@@ -2,7 +2,7 @@
 //!
 //! Inputs are degrees; output is meters.
 
-use crate::algorithms::{GeodesicAlgorithm, Spherical};
+use crate::algorithms::{GeodesicAlgorithm, Geographiclib, Spherical};
 use crate::{Distance, Ellipsoid, GeodistError, Point, Point3D};
 
 /// Earth-Centered, Earth-Fixed (ECEF) Cartesian coordinate in meters.
@@ -41,8 +41,8 @@ impl EcefPoint {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GeodesicSolution {
   distance: Distance,
-  initial_bearing_degrees: f64,
-  final_bearing_degrees: f64,
+  initial_bearing_deg: f64,
+  final_bearing_deg: f64,
 }
 
 impl GeodesicSolution {
@@ -52,13 +52,13 @@ impl GeodesicSolution {
   }
 
   /// Initial bearing (forward azimuth) in degrees, normalized to `[0, 360)`.
-  pub const fn initial_bearing_degrees(&self) -> f64 {
-    self.initial_bearing_degrees
+  pub const fn initial_bearing_deg(&self) -> f64 {
+    self.initial_bearing_deg
   }
 
   /// Final bearing (reverse azimuth) in degrees, normalized to `[0, 360)`.
-  pub const fn final_bearing_degrees(&self) -> f64 {
-    self.final_bearing_degrees
+  pub const fn final_bearing_deg(&self) -> f64 {
+    self.final_bearing_deg
   }
 }
 
@@ -106,10 +106,10 @@ pub fn geodesic_distance_on_radius(radius_meters: f64, p1: Point, p2: Point) -> 
   geodesic_distance_with(&strategy, p1, p2)
 }
 
-/// Compute geodesic distance using the mean radius of an ellipsoid.
+/// Compute geodesic distance on a reference ellipsoid.
 ///
-/// Inputs are degrees; the ellipsoid is reduced to its mean radius before
-/// computing the great-circle distance.
+/// Inputs are degrees; the ellipsoid axes are validated before solving the
+/// ellipsoidal inverse geodesic.
 ///
 /// # Errors
 ///
@@ -117,7 +117,7 @@ pub fn geodesic_distance_on_radius(radius_meters: f64, p1: Point, p2: Point) -> 
 /// point validation or distance construction error encountered during
 /// calculation.
 pub fn geodesic_distance_on_ellipsoid(ellipsoid: Ellipsoid, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
-  let strategy = Spherical::from_ellipsoid(ellipsoid)?;
+  let strategy = Geographiclib::from_ellipsoid(ellipsoid)?;
   geodesic_distance_with(&strategy, p1, p2)
 }
 
@@ -219,22 +219,28 @@ pub fn geodesic_with_bearings_on_radius(
   geodesic_with_bearings_inner(strategy.radius_meters(), p1, p2)
 }
 
-/// Compute distance and bearings using an ellipsoid's mean radius.
+/// Compute distance and bearings on a reference ellipsoid.
 ///
 /// Bearings follow the same conventions as [`geodesic_with_bearings`].
 ///
 /// # Errors
 ///
 /// Returns [`GeodistError::InvalidEllipsoid`] when ellipsoid parameters are
-/// not valid or any point validation or distance construction error encountered
-/// while computing the geodesic.
+/// not valid or any point validation or distance construction error
+/// encountered while computing the geodesic.
 pub fn geodesic_with_bearings_on_ellipsoid(
   ellipsoid: Ellipsoid,
   p1: Point,
   p2: Point,
 ) -> Result<GeodesicSolution, GeodistError> {
-  let radius_meters = ellipsoid.mean_radius()?;
-  geodesic_with_bearings_on_radius(radius_meters, p1, p2)
+  let solver = Geographiclib::from_ellipsoid(ellipsoid)?;
+  let (distance, initial_bearing_deg, final_bearing_deg) = solver.geodesic_with_bearings(p1, p2)?;
+
+  Ok(GeodesicSolution {
+    distance,
+    initial_bearing_deg,
+    final_bearing_deg,
+  })
 }
 
 /// Validate inputs and compute distance and bearings on a spherical model.
@@ -264,8 +270,8 @@ fn geodesic_with_bearings_inner(radius_meters: f64, p1: Point, p2: Point) -> Res
   if meters == 0.0 {
     return Ok(GeodesicSolution {
       distance,
-      initial_bearing_degrees: 0.0,
-      final_bearing_degrees: 0.0,
+      initial_bearing_deg: 0.0,
+      final_bearing_deg: 0.0,
     });
   }
 
@@ -275,8 +281,8 @@ fn geodesic_with_bearings_inner(radius_meters: f64, p1: Point, p2: Point) -> Res
 
   Ok(GeodesicSolution {
     distance,
-    initial_bearing_degrees: initial,
-    final_bearing_degrees: final_bearing,
+    initial_bearing_deg: initial,
+    final_bearing_deg: final_bearing,
   })
 }
 
@@ -449,14 +455,15 @@ mod tests {
   }
 
   #[test]
-  fn computes_distance_on_ellipsoid_mean_radius() {
+  fn computes_distance_on_ellipsoid() {
     let origin = Point::new(0.0, 0.0).unwrap();
     let east = Point::new(0.0, 1.0).unwrap();
 
     let ellipsoid = Ellipsoid::wgs84();
     let distance = geodesic_distance_on_ellipsoid(ellipsoid, origin, east).unwrap();
 
-    assert!(distance.meters() > 100_000.0);
+    let expected = 111_319.490_793_273_57;
+    assert!((distance.meters() - expected).abs() < 1e-6);
   }
 
   #[test]
@@ -465,8 +472,21 @@ mod tests {
     let east = Point::new(0.0, 1.0).unwrap();
 
     let result = geodesic_with_bearings(origin, east).unwrap();
-    assert!((result.initial_bearing_degrees() - 90.0).abs() < 1e-6);
-    assert!((result.final_bearing_degrees() - 90.0).abs() < 1e-6);
+    assert!((result.initial_bearing_deg() - 90.0).abs() < 1e-6);
+    assert!((result.final_bearing_deg() - 90.0).abs() < 1e-6);
+  }
+
+  #[test]
+  fn computes_ellipsoidal_bearings() {
+    let origin = Point::new(0.0, 0.0).unwrap();
+    let east = Point::new(0.0, 1.0).unwrap();
+
+    let result = geodesic_with_bearings_on_ellipsoid(Ellipsoid::wgs84(), origin, east).unwrap();
+    assert!((result.distance().meters() - 111_319.490_793_273_57).abs() < 1e-6);
+    let initial = result.initial_bearing_deg();
+    let final_bearing = result.final_bearing_deg();
+    assert!((initial - 90.0).abs() < 1e-12, "initial {initial}");
+    assert!((final_bearing - 90.0).abs() < 1e-12, "final {final_bearing}");
   }
 
   #[test]

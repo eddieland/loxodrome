@@ -29,14 +29,17 @@ def test_public_api_reflects_trimmed_surface() -> None:
         "InvalidBoundingBoxError",
         "EmptyPointSetError",
         "BoundingBox",
+        "Ellipsoid",
         "Point",
         "Point3D",
         "GeodesicResult",
         "HausdorffDirectedWitness",
         "HausdorffWitness",
         "geodesic_distance",
+        "geodesic_distance_on_ellipsoid",
         "geodesic_distance_3d",
         "geodesic_with_bearings",
+        "geodesic_with_bearings_on_ellipsoid",
         "hausdorff",
         "hausdorff_3d",
         "hausdorff_clipped",
@@ -48,6 +51,7 @@ def test_public_api_reflects_trimmed_surface() -> None:
     )
 
     # Ensure the public Point wrapper is wired to the module import.
+    assert geodist.Ellipsoid.__name__ == "Ellipsoid"
     assert geodist.Point.__name__ == "Point"
     assert geodist.Point3D.__name__ == "Point3D"
     assert geodist.BoundingBox.__name__ == "BoundingBox"

@@ -8,7 +8,7 @@ import pytest
 if importlib.util.find_spec("geodist._geodist_rs") is None:
     pytest.skip("Rust extension is not built; skipping geometry checks.", allow_module_level=True)
 
-from geodist import BoundingBox, InvalidGeometryError, Point, Point3D
+from geodist import BoundingBox, Ellipsoid, InvalidGeometryError, Point, Point3D
 
 
 def test_point_accepts_numeric_coordinates() -> None:
@@ -54,6 +54,27 @@ def test_point_rejects_bool_inputs() -> None:
 
     with pytest.raises(InvalidGeometryError):
         Point(0.0, False)
+
+
+def test_ellipsoid_accepts_axes_and_wgs84_factory() -> None:
+    ellipsoid = Ellipsoid(6_378_137.0, 6_356_752.314_245)
+    assert ellipsoid.to_tuple() == (6_378_137.0, 6_356_752.314_245)
+    assert Ellipsoid.wgs84() == ellipsoid
+
+
+@pytest.mark.parametrize(
+    ("semi_major", "semi_minor"),
+    [
+        (math.nan, 6_300_000.0),
+        (6_300_000.0, math.inf),
+        (0.0, 6_300_000.0),
+        (6_300_000.0, -10.0),
+        (6_300_000.0, 6_500_000.0),
+    ],
+)
+def test_ellipsoid_rejects_invalid_axes(semi_major: float, semi_minor: float) -> None:
+    with pytest.raises(InvalidGeometryError):
+        Ellipsoid(semi_major, semi_minor)
 
 
 def test_point3d_accepts_altitude_and_matches_tuple() -> None:
