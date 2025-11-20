@@ -67,6 +67,7 @@ jobs:
         working-directory: pygeodist
         env:
           RUFF_OUTPUT_FORMAT: github
+          RUFF_CONFIG: ruff.toml
         run: make lint
 
       - name: Run tests
