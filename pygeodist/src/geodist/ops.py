@@ -129,7 +129,9 @@ def hausdorff_directed_clipped(
     """Directed Hausdorff witness after clipping both sets to a bounding box."""
     try:
         witness = _geodist_rs.hausdorff_directed_clipped(
-            [it._handle for it in a], [it._handle for it in b], bounding_box._handle
+            [it._handle for it in a],
+            [it._handle for it in b],
+            bounding_box._handle,
         )
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
@@ -144,7 +146,11 @@ def hausdorff_directed_clipped(
 def hausdorff_clipped(a: Iterable[Point], b: Iterable[Point], bounding_box: BoundingBox) -> HausdorffWitness:
     """Symmetric Hausdorff witness after clipping both sets to a bounding box."""
     try:
-        witness = _geodist_rs.hausdorff_clipped([it._handle for it in a], [it._handle for it in b], bounding_box._handle)
+        witness = _geodist_rs.hausdorff_clipped(
+            [it._handle for it in a],
+            [it._handle for it in b],
+            bounding_box._handle,
+        )
     except ValueError as exc:
         raise GeodistError(str(exc)) from exc
 

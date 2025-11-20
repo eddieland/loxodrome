@@ -573,7 +573,7 @@ fn hausdorff_directed_naive<A: GeodesicAlgorithm>(
     let mut nearest: Option<(f64, usize)> = None;
     for candidate in candidates {
       let meters = algorithm.geodesic_distance(origin.point, candidate.point)?.meters();
-      if nearest.map_or(true, |(current, _)| meters < current) {
+      if nearest.is_none_or(|(current, _)| meters < current) {
         nearest = Some((meters, candidate.index));
       }
     }
@@ -585,7 +585,7 @@ fn hausdorff_directed_naive<A: GeodesicAlgorithm>(
       candidate_index: nearest_index,
     };
 
-    if best.map_or(true, |current| witness.meters > current.meters) {
+    if best.is_none_or(|current| witness.meters > current.meters) {
       best = Some(witness);
     }
   }
@@ -613,7 +613,7 @@ fn hausdorff_directed_indexed<A: GeodesicAlgorithm>(
       candidate_index: nearest.source_index,
     };
 
-    if best.map_or(true, |current| witness.meters > current.meters) {
+    if best.is_none_or(|current| witness.meters > current.meters) {
       best = Some(witness);
     }
   }
@@ -635,7 +635,7 @@ fn hausdorff_directed_3d_naive(
     let mut nearest: Option<(f64, usize)> = None;
     for candidate in candidates {
       let meters = origin.point.distance_to(candidate.point);
-      if nearest.map_or(true, |(current, _)| meters < current) {
+      if nearest.is_none_or(|(current, _)| meters < current) {
         nearest = Some((meters, candidate.index));
       }
     }
@@ -647,7 +647,7 @@ fn hausdorff_directed_3d_naive(
       candidate_index: nearest_index,
     };
 
-    if best.map_or(true, |current| witness.meters > current.meters) {
+    if best.is_none_or(|current| witness.meters > current.meters) {
       best = Some(witness);
     }
   }
@@ -678,7 +678,7 @@ fn hausdorff_directed_3d_indexed(
       candidate_index: nearest.source_index,
     };
 
-    if best.map_or(true, |current| witness.meters > current.meters) {
+    if best.is_none_or(|current| witness.meters > current.meters) {
       best = Some(witness);
     }
   }
