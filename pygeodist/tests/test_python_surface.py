@@ -24,5 +24,9 @@ def test_public_api_reflects_trimmed_surface() -> None:
         "InvalidGeometryError",
         "KernelExecutionError",
         "KernelUnavailableError",
+        "Point",
         "VectorizationError",
     )
+
+    # Ensure the public Point wrapper is wired to the module import.
+    assert geodist.Point.__name__ == "Point"

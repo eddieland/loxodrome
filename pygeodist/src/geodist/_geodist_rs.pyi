@@ -8,8 +8,14 @@ from typing import Final
 
 EARTH_RADIUS_METERS: Final[float]
 
-__all__ = ["EARTH_RADIUS_METERS"]
+class Point:
+    latitude_degrees: float
+    longitude_degrees: float
+
+    def __init__(self, latitude_degrees: float, longitude_degrees: float) -> None: ...
+    def to_tuple(self) -> tuple[float, float]: ...
+
+__all__ = ["EARTH_RADIUS_METERS", "Point"]
 
 # Upcoming Rust-backed geometry handles will mirror the Rust structs once exposed:
-# - Point(latitude_degrees: float, longitude_degrees: float)
 # - Additional geometry containers will be added incrementally once the kernels are wired.
