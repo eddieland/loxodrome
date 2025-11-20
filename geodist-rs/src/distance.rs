@@ -5,7 +5,11 @@
 use crate::algorithms::{GeodesicAlgorithm, Spherical};
 use crate::{Distance, Ellipsoid, GeodistError, Point};
 
-/// Distance plus bearings for a geodesic path.
+/// Distance plus forward and reverse bearings for a geodesic path.
+///
+/// Bearings are measured clockwise from north in degrees and normalized to
+/// `[0, 360)`. The stored distance is a validated meter measurement that
+/// matches the model used to compute the bearings.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GeodesicSolution {
   distance: Distance,
@@ -33,13 +37,25 @@ impl GeodesicSolution {
 /// Compute great-circle (geodesic) distance between two geographic points in
 /// degrees using the default spherical algorithm.
 ///
-/// Returns a validated [`Distance`] in meters. Inputs are validated before
-/// calculations.
+/// Uses the WGS84 mean radius and validates inputs before calculating the
+/// haversine arc length.
+///
+/// # Errors
+///
+/// Returns [`GeodistError`] when either coordinate is invalid or when the
+/// resulting meter value cannot be represented as a [`Distance`].
 pub fn geodesic_distance(p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   geodesic_distance_with(&Spherical::default(), p1, p2)
 }
 
 /// Compute geodesic distance using a custom algorithm strategy.
+///
+/// Inputs are degrees. Validation and error semantics are defined by the
+/// provided [`GeodesicAlgorithm`].
+///
+/// # Errors
+///
+/// Propagates the first [`GeodistError`] returned by `algorithm`.
 pub fn geodesic_distance_with<A: GeodesicAlgorithm>(
   algorithm: &A,
   p1: Point,
@@ -49,12 +65,29 @@ pub fn geodesic_distance_with<A: GeodesicAlgorithm>(
 }
 
 /// Compute geodesic distance using a custom spherical radius.
+///
+/// Inputs are degrees; `radius_meters` must be finite and positive.
+///
+/// # Errors
+///
+/// Returns [`GeodistError::InvalidRadius`] for non-finite or non-positive
+/// radii and propagates point validation or distance construction errors
+/// surfaced while computing the geodesic.
 pub fn geodesic_distance_on_radius(radius_meters: f64, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   let strategy = Spherical::with_radius(radius_meters)?;
   geodesic_distance_with(&strategy, p1, p2)
 }
 
 /// Compute geodesic distance using the mean radius of an ellipsoid.
+///
+/// Inputs are degrees; the ellipsoid is reduced to its mean radius before
+/// computing the great-circle distance.
+///
+/// # Errors
+///
+/// Returns [`GeodistError::InvalidEllipsoid`] when axes are not valid or any
+/// point validation or distance construction error encountered during
+/// calculation.
 pub fn geodesic_distance_on_ellipsoid(ellipsoid: Ellipsoid, p1: Point, p2: Point) -> Result<Distance, GeodistError> {
   let strategy = Spherical::from_ellipsoid(ellipsoid)?;
   geodesic_distance_with(&strategy, p1, p2)
@@ -65,11 +98,22 @@ pub fn geodesic_distance_on_ellipsoid(ellipsoid: Ellipsoid, p1: Point, p2: Point
 /// Accepts a slice of `(origin, destination)` tuples and returns a `Vec` of
 /// meter distances in the same order. Validation is performed for every point;
 /// the first invalid coordinate returns an error and short-circuits.
+///
+/// # Errors
+///
+/// Returns the first [`GeodistError`] encountered while validating or
+/// computing a pair.
 pub fn geodesic_distances(pairs: &[(Point, Point)]) -> Result<Vec<f64>, GeodistError> {
   geodesic_distances_with(&Spherical::default(), pairs)
 }
 
 /// Compute batch geodesic distances with a custom algorithm strategy.
+///
+/// Inputs are degrees; results are meter distances in the same order.
+///
+/// # Errors
+///
+/// Propagates the first [`GeodistError`] returned by `algorithm`.
 pub fn geodesic_distances_with<A: GeodesicAlgorithm>(
   algorithm: &A,
   pairs: &[(Point, Point)],
@@ -78,11 +122,27 @@ pub fn geodesic_distances_with<A: GeodesicAlgorithm>(
 }
 
 /// Compute distance and bearings using the default spherical model.
+///
+/// Returns the forward and reverse bearings in degrees alongside a validated
+/// meter distance, using the WGS84 mean radius.
+///
+/// # Errors
+///
+/// Returns [`GeodistError`] when either point is invalid or if the derived
+/// distance cannot be represented.
 pub fn geodesic_with_bearings(p1: Point, p2: Point) -> Result<GeodesicSolution, GeodistError> {
   geodesic_with_bearings_on_radius(Spherical::default().radius_meters(), p1, p2)
 }
 
 /// Compute distance and bearings using a custom spherical radius.
+///
+/// Bearings are normalized to `[0, 360)` and measured clockwise from north.
+///
+/// # Errors
+///
+/// Returns [`GeodistError::InvalidRadius`] when `radius_meters` is NaN,
+/// infinite, or non-positive, or any validation or distance construction error
+/// while computing the geodesic.
 pub fn geodesic_with_bearings_on_radius(
   radius_meters: f64,
   p1: Point,
@@ -93,6 +153,14 @@ pub fn geodesic_with_bearings_on_radius(
 }
 
 /// Compute distance and bearings using an ellipsoid's mean radius.
+///
+/// Bearings follow the same conventions as [`geodesic_with_bearings`].
+///
+/// # Errors
+///
+/// Returns [`GeodistError::InvalidEllipsoid`] when ellipsoid parameters are
+/// not valid or any point validation or distance construction error encountered
+/// while computing the geodesic.
 pub fn geodesic_with_bearings_on_ellipsoid(
   ellipsoid: Ellipsoid,
   p1: Point,
