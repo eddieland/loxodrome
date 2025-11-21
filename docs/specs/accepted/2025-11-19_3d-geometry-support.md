@@ -1,9 +1,11 @@
-# 3D Geometry Support (WIP)
+# 3D Geometry Support
+
+**Status:** ✅ Done (accepted; core 3D geometry support landed)
 
 ## Purpose
 
 - Explore adding optional 3D geometry handling (lat/lon + altitude) while keeping existing 2D performance and API stability.
-- Capture assumptions and approach options before implementation; this is a WIP scoping doc, not a committed roadmap.
+- Capture assumptions and approach options for the accepted baseline; serves as the record for current 3D support decisions.
 
 ## Guiding Constraints
 
@@ -36,7 +38,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | P0 | Add mode-aware distance kernel | Mode fixed per call; 2D path unchanged; 3D uses chosen metric; tests | Consider trait or enum mode | ✅ |
 | P1 | Extend Hausdorff to 3D | R-tree envelopes in 3D; clipped variants defined or deferred | Keep 2D perf unaffected | ✅ |
 | P1 | Python wrappers for 3D | Public API mirrors Rust; docs; tests | Avoid mixed-dimension inputs | ✅ |
-| P2 | Benchmarks and perf guardrails | Baseline 2D vs 3D; ensure no regressions | Integrate into CI later | 📝 |
+| P2 | Benchmarks and perf guardrails | Baseline 2D vs 3D; ensure no regressions | Integrate into CI later; track in perf/CI backlog | ⏸️ |
 | P3 | CLI/interop helpers | Optional Typer/interop updates | Only if APIs stabilize | ⏸️ |
 
 ### Risks & Mitigations
@@ -56,7 +58,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 ## Status Tracking (to be updated by subagent)
 
 - **Latest completed task:** Added 3D Hausdorff kernels (ECEF chord, index + naive), clipping support, and mirrored Python bindings/tests.
-- **Next up:** Benchmarks and perf guardrails for 2D vs 3D paths; consider witness-point reporting once kernels settle.
+- **Next up:** None. Future benchmarks/perf guardrails will be tracked in the perf/CI backlog or separate specs.
 
 ## Lessons Learned (ongoing)
 
