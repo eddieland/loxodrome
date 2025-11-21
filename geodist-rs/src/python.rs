@@ -13,7 +13,9 @@ use pyo3::types::PyModule;
 use pyo3::{PyErr, create_exception, wrap_pyfunction};
 
 use crate::constants::EARTH_RADIUS_METERS;
-use crate::{distance, hausdorff as hausdorff_kernel, types};
+use crate::{distance, hausdorff as hausdorff_kernel, polygon as polygon_kernel, polyline, types};
+
+type RingTuple = Vec<(f64, f64)>;
 
 create_exception!(_geodist_rs, GeodistError, PyValueError);
 create_exception!(_geodist_rs, InvalidLatitudeError, GeodistError);
@@ -24,6 +26,7 @@ create_exception!(_geodist_rs, InvalidRadiusError, GeodistError);
 create_exception!(_geodist_rs, InvalidEllipsoidError, GeodistError);
 create_exception!(_geodist_rs, InvalidBoundingBoxError, GeodistError);
 create_exception!(_geodist_rs, EmptyPointSetError, GeodistError);
+create_exception!(_geodist_rs, InvalidPolygonError, GeodistError);
 
 #[pyclass(frozen)]
 #[derive(Debug, Clone)]
@@ -199,6 +202,50 @@ pub struct Point3D {
   altitude_m: f64,
 }
 
+/// Polygon boundary wrapper.
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct Polygon {
+  inner: polygon_kernel::Polygon,
+}
+
+#[pymethods]
+impl Polygon {
+  #[new]
+  pub fn new(exterior: Vec<(f64, f64)>, holes: Option<Vec<Vec<(f64, f64)>>>) -> PyResult<Self> {
+    let exterior_points = map_to_points_from_tuples(&exterior)?;
+    let hole_points = match holes {
+      Some(rings) => {
+        let mut out = Vec::with_capacity(rings.len());
+        for ring in rings {
+          out.push(map_to_points_from_tuples(&ring)?);
+        }
+        out
+      }
+      None => Vec::new(),
+    };
+
+    let polygon = map_geodist_result(polygon_kernel::Polygon::new(exterior_points, hole_points))?;
+    Ok(Self { inner: polygon })
+  }
+
+  fn __repr__(&self) -> String {
+    "Polygon(...)".to_string()
+  }
+
+  /// Return `(exterior, holes)` where rings are lists of `(lat, lon)` tuples.
+  pub fn to_tuple(&self) -> (RingTuple, Vec<RingTuple>) {
+    let exterior = self.inner.exterior.iter().map(|p| (p.lat, p.lon)).collect();
+    let holes = self
+      .inner
+      .holes
+      .iter()
+      .map(|ring| ring.iter().map(|p| (p.lat, p.lon)).collect())
+      .collect();
+    (exterior, holes)
+  }
+}
+
 #[pymethods]
 impl Point3D {
   /// Create a new geographic point with altitude.
@@ -357,6 +404,31 @@ fn map_to_ellipsoid(handle: &Ellipsoid) -> PyResult<types::Ellipsoid> {
   ))
 }
 
+fn map_to_points_from_tuples(coords: &[(f64, f64)]) -> PyResult<Vec<types::Point>> {
+  coords
+    .iter()
+    .map(|(lat, lon)| map_geodist_result(types::Point::new(*lat, *lon)))
+    .collect()
+}
+
+fn map_boundary_densification_opts(
+  max_segment_length_m: Option<f64>,
+  max_segment_angle_deg: Option<f64>,
+  sample_cap: usize,
+) -> PyResult<polyline::DensificationOptions> {
+  if max_segment_length_m.is_none() && max_segment_angle_deg.is_none() {
+    return Err(InvalidDistanceError::new_err(
+      "polyline densification requires max_segment_length_m or max_segment_angle_deg",
+    ));
+  }
+
+  Ok(polyline::DensificationOptions {
+    max_segment_length_m,
+    max_segment_angle_deg,
+    sample_cap,
+  })
+}
+
 #[pyfunction]
 fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
   let origin = map_to_point(p1)?;
@@ -499,6 +571,20 @@ fn hausdorff_clipped_3d(a: Vec<Point3D>, b: Vec<Point3D>, bounding_box: &Boundin
     .map_err(map_geodist_error)
 }
 
+#[pyfunction]
+fn hausdorff_polygon_boundary(
+  a: &Polygon,
+  b: &Polygon,
+  max_segment_length_m: Option<f64>,
+  max_segment_angle_deg: Option<f64>,
+  sample_cap: usize,
+) -> PyResult<f64> {
+  let options = map_boundary_densification_opts(max_segment_length_m, max_segment_angle_deg, sample_cap)?;
+  polygon_kernel::hausdorff_boundary(&a.inner, &b.inner, options)
+    .map(|witness| witness.distance().meters())
+    .map_err(map_geodist_error)
+}
+
 #[pymodule]
 fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("EARTH_RADIUS_METERS", EARTH_RADIUS_METERS)?;
@@ -511,9 +597,11 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add("InvalidEllipsoidError", py.get_type::<InvalidEllipsoidError>())?;
   m.add("InvalidBoundingBoxError", py.get_type::<InvalidBoundingBoxError>())?;
   m.add("EmptyPointSetError", py.get_type::<EmptyPointSetError>())?;
+  m.add("InvalidPolygonError", py.get_type::<InvalidBoundingBoxError>())?;
   m.add_class::<Ellipsoid>()?;
   m.add_class::<Point>()?;
   m.add_class::<Point3D>()?;
+  m.add_class::<Polygon>()?;
   m.add_class::<GeodesicSolution>()?;
   m.add_class::<BoundingBox>()?;
   m.add_class::<HausdorffDirectedWitness>()?;
@@ -531,5 +619,6 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_function(wrap_pyfunction!(hausdorff_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_clipped_3d, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_polygon_boundary, m)?)?;
   Ok(())
 }

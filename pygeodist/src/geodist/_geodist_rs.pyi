@@ -42,6 +42,10 @@ class Point3D:
     def __init__(self, lat: float, lon: float, altitude_m: float) -> None: ...
     def to_tuple(self) -> tuple[float, float, float]: ...
 
+class Polygon:
+    def __init__(self, exterior: list[tuple[float, float]], holes: list[list[tuple[float, float]]]): ...
+    def to_tuple(self) -> tuple[list[tuple[float, float]], list[list[tuple[float, float]]]]: ...
+
 class GeodesicSolution:
     distance_m: float
     initial_bearing_deg: float
@@ -101,6 +105,13 @@ def hausdorff_directed_clipped_3d(
     a: list[Point3D], b: list[Point3D], bounding_box: BoundingBox
 ) -> HausdorffDirectedWitness: ...
 def hausdorff_clipped_3d(a: list[Point3D], b: list[Point3D], bounding_box: BoundingBox) -> HausdorffWitness: ...
+def hausdorff_polygon_boundary(
+    a: Polygon,
+    b: Polygon,
+    max_segment_length_m: float | None,
+    max_segment_angle_deg: float | None,
+    sample_cap: int,
+) -> float: ...
 
 __all__ = [
     "EARTH_RADIUS_METERS",
@@ -116,6 +127,7 @@ __all__ = [
     "Ellipsoid",
     "Point",
     "Point3D",
+    "Polygon",
     "GeodesicSolution",
     "HausdorffDirectedWitness",
     "HausdorffWitness",
@@ -133,6 +145,7 @@ __all__ = [
     "hausdorff_3d",
     "hausdorff_directed_clipped_3d",
     "hausdorff_clipped_3d",
+    "hausdorff_polygon_boundary",
 ]
 
 # Upcoming Rust-backed geometry handles will mirror the Rust structs once exposed:

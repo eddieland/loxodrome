@@ -22,7 +22,7 @@ from .errors import (
     InvalidLongitudeError,
     InvalidRadiusError,
 )
-from .geometry import BoundingBox, Ellipsoid, Point, Point3D
+from .geometry import BoundingBox, Ellipsoid, Point, Point3D, Polygon
 from .ops import (
     GeodesicResult,
     HausdorffDirectedWitness,
@@ -40,6 +40,7 @@ from .ops import (
     hausdorff_directed_3d,
     hausdorff_directed_clipped,
     hausdorff_directed_clipped_3d,
+    hausdorff_polygon_boundary,
 )
 
 EARTH_RADIUS_METERS: Final[float] = float(_geodist_rs.EARTH_RADIUS_METERS)
@@ -60,6 +61,7 @@ __all__ = (
     "Ellipsoid",
     "Point",
     "Point3D",
+    "Polygon",
     "GeodesicResult",
     "HausdorffDirectedWitness",
     "HausdorffWitness",
@@ -76,4 +78,5 @@ __all__ = (
     "hausdorff_directed_3d",
     "hausdorff_directed_clipped",
     "hausdorff_directed_clipped_3d",
+    "hausdorff_polygon_boundary",
 )

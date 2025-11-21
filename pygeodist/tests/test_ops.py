@@ -23,6 +23,7 @@ from geodist import (
     hausdorff_directed_3d,
     hausdorff_directed_clipped,
     hausdorff_directed_clipped_3d,
+    hausdorff_polygon_boundary,
 )
 
 
@@ -125,3 +126,15 @@ def test_hausdorff_3d_clipped_filters_points() -> None:
     directed = hausdorff_directed_clipped_3d([inside, outside], [inside], box)
     assert symmetric.distance_m == approx(0.0)
     assert directed.distance_m == approx(0.0)
+
+
+def test_polygon_boundary_hausdorff_matches_zero_for_identical() -> None:
+    exterior = [
+        (0.0, 0.0),
+        (0.0, 1.0),
+        (1.0, 1.0),
+        (1.0, 0.0),
+        (0.0, 0.0),
+    ]
+    distance = hausdorff_polygon_boundary(exterior, exterior)
+    assert distance == approx(0.0)

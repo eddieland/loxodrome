@@ -33,7 +33,7 @@ impl Default for DensificationOptions {
 }
 
 impl DensificationOptions {
-  fn validate(&self) -> Result<(), GeodistError> {
+  const fn validate(&self) -> Result<(), GeodistError> {
     if self.max_segment_length_m.is_none() && self.max_segment_angle_deg.is_none() {
       return Err(GeodistError::MissingDensificationKnob);
     }
@@ -105,7 +105,7 @@ pub fn densify_polyline(vertices: &[Point], options: DensificationOptions) -> Re
   }
 
   let segments = build_segments(&deduped, &options)?;
-  Ok(densify_segments(&segments, &deduped, &options.sample_cap, None)?)
+  densify_segments(&segments, &deduped, &options.sample_cap, None)
 }
 
 /// Densify a MultiLineString-structured collection of polylines, returning
@@ -196,19 +196,19 @@ fn build_segments(vertices: &[Point], options: &DensificationOptions) -> Result<
 fn segment_split_count(distance_m: f64, options: &DensificationOptions) -> usize {
   let mut splits = 1usize;
 
-  if let Some(max_length) = options.max_segment_length_m {
-    if max_length > 0.0 {
-      let parts = (distance_m / max_length).ceil() as usize;
-      splits = splits.max(parts);
-    }
+  if let Some(max_length) = options.max_segment_length_m
+    && max_length > 0.0
+  {
+    let parts = (distance_m / max_length).ceil() as usize;
+    splits = splits.max(parts);
   }
 
-  if let Some(max_angle) = options.max_segment_angle_deg {
-    if max_angle > 0.0 {
-      let central_angle_deg = (distance_m / EARTH_RADIUS_METERS) * (180.0 / PI);
-      let parts = (central_angle_deg / max_angle).ceil() as usize;
-      splits = splits.max(parts);
-    }
+  if let Some(max_angle) = options.max_segment_angle_deg
+    && max_angle > 0.0
+  {
+    let central_angle_deg = (distance_m / EARTH_RADIUS_METERS) * (180.0 / PI);
+    let parts = (central_angle_deg / max_angle).ceil() as usize;
+    splits = splits.max(parts);
   }
 
   splits.max(1)
@@ -223,7 +223,7 @@ fn densify_segments(
   if segments.is_empty() {
     // All segments collapsed to duplicates; emit one sample for the retained
     // vertex.
-    return Ok(vertices.get(0).map_or_else(Vec::new, |vertex| vec![*vertex]));
+    return Ok(vertices.first().map_or_else(Vec::new, |vertex| vec![*vertex]));
   }
 
   let total_samples = 1 + segments.iter().map(|info| info.split_count).sum::<usize>();
@@ -284,12 +284,12 @@ fn interpolate_segment(start: Point, end: Point, central_angle_rad: f64, split_c
   points
 }
 
-pub(crate) fn collapse_duplicates(vertices: &[Point]) -> Vec<Point> {
+pub fn collapse_duplicates(vertices: &[Point]) -> Vec<Point> {
   let mut deduped = Vec::with_capacity(vertices.len());
   let mut last: Option<Point> = None;
 
   for &vertex in vertices {
-    if last.map_or(true, |prev| prev != vertex) {
+    if last != Some(vertex) {
       deduped.push(vertex);
       last = Some(vertex);
     }
@@ -303,11 +303,11 @@ struct VertexValidator {
 }
 
 impl VertexValidator {
-  fn new(part_index: Option<usize>) -> Self {
+  const fn new(part_index: Option<usize>) -> Self {
     Self { part_index }
   }
 
-  fn set_part_index(&mut self, part_index: usize) {
+  const fn set_part_index(&mut self, part_index: usize) {
     self.part_index = Some(part_index);
   }
 

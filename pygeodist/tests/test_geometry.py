@@ -5,6 +5,7 @@ import math
 import pytest
 
 from geodist import BoundingBox, Ellipsoid, InvalidGeometryError, Point, Point3D
+from geodist.geometry import Polygon
 
 
 def test_point_accepts_numeric_coordinates() -> None:
@@ -114,3 +115,25 @@ def test_bounding_box_rejects_invalid_ranges() -> None:
 def test_bounding_box_rejects_bool_inputs() -> None:
     with pytest.raises(InvalidGeometryError):
         BoundingBox(True, 10.0, -20.0, 20.0)
+
+
+def test_polygon_accepts_exterior_and_hole() -> None:
+    exterior = [
+        (0.0, 0.0),
+        (0.0, 1.0),
+        (1.0, 1.0),
+        (1.0, 0.0),
+        (0.0, 0.0),
+    ]
+    hole = [
+        (0.2, 0.2),
+        (0.4, 0.2),
+        (0.4, 0.4),
+        (0.2, 0.4),
+        (0.2, 0.2),
+    ]
+
+    polygon = Polygon(exterior, [hole])
+    exterior_out, holes_out = polygon.to_tuple()
+    assert len(exterior_out) == 5
+    assert len(holes_out) == 1

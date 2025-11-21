@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from math import isfinite
+from typing import Sequence
 
 from . import _geodist_rs
 from .errors import InvalidGeometryError
@@ -17,6 +18,7 @@ __all__ = (
     "Point",
     "Point3D",
     "BoundingBox",
+    "Polygon",
 )
 
 
@@ -241,6 +243,15 @@ def _coerce_altitude(altitude_m: float) -> AltitudeM:
     return numeric_value
 
 
+def _coerce_point_like(value: Point | PointTuple) -> PointTuple:
+    if isinstance(value, Point):
+        return value.to_tuple()
+    if isinstance(value, tuple) and len(value) == 2:
+        lat, lon = value
+        return (_coerce_latitude(lat), _coerce_longitude(lon))
+    raise InvalidGeometryError(f"expected Point or (lat, lon) tuple, got {type(value).__name__}")
+
+
 class BoundingBox:
     """Immutable geographic bounding box expressed in degrees."""
 
@@ -313,3 +324,28 @@ class BoundingBox:
         if not isinstance(other, BoundingBox):
             return NotImplemented
         return self.to_tuple() == other.to_tuple()
+
+
+class Polygon:
+    """Immutable polygon boundary consisting of an exterior ring and optional holes."""
+
+    __slots__ = ("_handle",)
+
+    def __init__(
+        self,
+        exterior: Sequence[Point | PointTuple],
+        holes: Sequence[Sequence[Point | PointTuple]] | None = None,
+    ) -> None:
+        """Initialize a polygon boundary with CCW exterior and optional CW holes."""
+        exterior_ring = [_coerce_point_like(vertex) for vertex in exterior]
+        hole_rings = [[_coerce_point_like(vertex) for vertex in ring] for ring in holes or []]
+        self._handle = _geodist_rs.Polygon(exterior_ring, hole_rings)
+
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging."""
+        return f"Polygon(num_holes={len(self.to_tuple()[1])})"
+
+    def to_tuple(self) -> tuple[list[PointTuple], list[list[PointTuple]]]:
+        """Return a tuple of exterior and holes for inspection."""
+        exterior, holes = self._handle.to_tuple()
+        return list(exterior), [list(ring) for ring in holes]

@@ -5,15 +5,15 @@
 //! deferred.
 
 use crate::polyline::{DensificationOptions, FlattenedPolyline, collapse_duplicates, densify_multiline};
-use crate::{GeodistError, Point, RingOrientation, VertexValidationError};
+use crate::{GeodistError, Point, RingOrientation, VertexValidationError, geodesic_distance, hausdorff};
 
 const RING_CLOSURE_TOLERANCE_DEG: f64 = 1e-9;
 
 /// A polygon consisting of an exterior ring and zero or more interior holes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Polygon {
-  exterior: Vec<Point>,
-  holes: Vec<Vec<Point>>,
+  pub(crate) exterior: Vec<Point>,
+  pub(crate) holes: Vec<Vec<Point>>,
 }
 
 impl Polygon {
@@ -51,6 +51,116 @@ impl Polygon {
     parts.extend(self.holes.iter().cloned());
     densify_multiline(&parts, options)
   }
+}
+
+/// Directed Hausdorff witness over polygon boundaries with part-level payloads.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BoundaryDirectedWitness {
+  distance: crate::Distance,
+  source_part: usize,
+  source_index: usize,
+  target_part: usize,
+  target_index: usize,
+  source_coord: Point,
+  target_coord: Point,
+}
+
+impl BoundaryDirectedWitness {
+  pub const fn distance(&self) -> crate::Distance {
+    self.distance
+  }
+
+  pub const fn source_part(&self) -> usize {
+    self.source_part
+  }
+
+  pub const fn source_index(&self) -> usize {
+    self.source_index
+  }
+
+  pub const fn target_part(&self) -> usize {
+    self.target_part
+  }
+
+  pub const fn target_index(&self) -> usize {
+    self.target_index
+  }
+
+  pub const fn source_coord(&self) -> Point {
+    self.source_coord
+  }
+
+  pub const fn target_coord(&self) -> Point {
+    self.target_coord
+  }
+}
+
+/// Symmetric Hausdorff witness over polygon boundaries.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BoundaryHausdorffWitness {
+  distance: crate::Distance,
+  a_to_b: BoundaryDirectedWitness,
+  b_to_a: BoundaryDirectedWitness,
+}
+
+impl BoundaryHausdorffWitness {
+  pub const fn distance(&self) -> crate::Distance {
+    self.distance
+  }
+
+  pub const fn a_to_b(&self) -> BoundaryDirectedWitness {
+    self.a_to_b
+  }
+
+  pub const fn b_to_a(&self) -> BoundaryDirectedWitness {
+    self.b_to_a
+  }
+}
+
+/// Compute symmetric Hausdorff distance between polygon boundaries.
+pub fn hausdorff_boundary(
+  a: &Polygon,
+  b: &Polygon,
+  options: DensificationOptions,
+) -> Result<BoundaryHausdorffWitness, GeodistError> {
+  let directed = hausdorff_boundary_directed(a, b, options)?;
+  let reverse = hausdorff_boundary_directed(b, a, options)?;
+  let distance = crate::Distance::from_meters(directed.distance().meters().max(reverse.distance().meters()))?;
+
+  Ok(BoundaryHausdorffWitness {
+    distance,
+    a_to_b: directed,
+    b_to_a: reverse,
+  })
+}
+
+/// Compute directed Hausdorff distance between polygon boundaries.
+pub fn hausdorff_boundary_directed(
+  a: &Polygon,
+  b: &Polygon,
+  options: DensificationOptions,
+) -> Result<BoundaryDirectedWitness, GeodistError> {
+  let samples_a = a.densify_boundaries(options)?;
+  let samples_b = b.densify_boundaries(options)?;
+
+  let witness = hausdorff::hausdorff_directed(samples_a.samples(), samples_b.samples())?;
+  let (source_part, source_index) = map_flat_index(samples_a.part_offsets(), witness.origin_index())?;
+  let (target_part, target_index) = map_flat_index(samples_b.part_offsets(), witness.candidate_index())?;
+
+  let source_coord = samples_a.samples()[witness.origin_index()];
+  let target_coord = samples_b.samples()[witness.candidate_index()];
+
+  let distance = geodesic_distance(source_coord, target_coord)?;
+
+  Ok(BoundaryDirectedWitness {
+    distance,
+    source_part,
+    source_index,
+    target_part,
+    target_index,
+    source_coord,
+    target_coord,
+  })
 }
 
 fn normalize_ring(
@@ -169,6 +279,18 @@ fn signed_area(vertices: &[Point]) -> f64 {
   sum
 }
 
+fn map_flat_index(offsets: &[usize], flat_index: usize) -> Result<(usize, usize), GeodistError> {
+  for window in offsets.windows(2).enumerate() {
+    let part = window.0;
+    let start = window.1[0];
+    let end = window.1[1];
+    if flat_index < end {
+      return Ok((part, flat_index - start));
+    }
+  }
+  Err(GeodistError::InvalidDistance(flat_index as f64))
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -230,5 +352,34 @@ mod tests {
       })
       .unwrap();
     assert_eq!(samples.part_offsets().len(), 3);
+  }
+
+  #[test]
+  fn boundary_hausdorff_maps_part_indices() {
+    let exterior = ccw_square();
+    let hole = cw_square();
+    let polygon = Polygon::new(exterior.clone(), vec![hole.clone()]).unwrap();
+    let shifted = Polygon::new(
+      exterior
+        .iter()
+        .map(|p| Point::new(p.lat, p.lon + 2.0).unwrap())
+        .collect(),
+      vec![hole.iter().map(|p| Point::new(p.lat, p.lon + 2.0).unwrap()).collect()],
+    )
+    .unwrap();
+
+    let witness = hausdorff_boundary(
+      &polygon,
+      &shifted,
+      DensificationOptions {
+        max_segment_length_m: Some(1_000_000.0),
+        max_segment_angle_deg: None,
+        sample_cap: 50_000,
+      },
+    )
+    .unwrap();
+
+    assert_eq!(witness.a_to_b().source_part(), 0);
+    assert_eq!(witness.b_to_a().source_part(), 0);
   }
 }

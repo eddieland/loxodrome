@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from . import _geodist_rs
-from .geometry import BoundingBox, Ellipsoid, Point, Point3D
+from .geometry import BoundingBox, Ellipsoid, Point, Point3D, Polygon
 from .types import Meters
 
 __all__ = (
@@ -26,6 +26,7 @@ __all__ = (
     "hausdorff_directed_clipped",
     "hausdorff_clipped_3d",
     "hausdorff_clipped",
+    "hausdorff_polygon_boundary",
 )
 
 
@@ -276,4 +277,29 @@ def hausdorff_clipped_3d(a: Iterable[Point3D], b: Iterable[Point3D], bounding_bo
             origin_index=int(witness.b_to_a.origin_index),
             candidate_index=int(witness.b_to_a.candidate_index),
         ),
+    )
+
+
+def hausdorff_polygon_boundary(
+    exterior_a: Sequence[Point | tuple[float, float]],
+    exterior_b: Sequence[Point | tuple[float, float]],
+    *,
+    holes_a: Sequence[Sequence[Point | tuple[float, float]]] | None = None,
+    holes_b: Sequence[Sequence[Point | tuple[float, float]]] | None = None,
+    max_segment_length_m: float | None = 100.0,
+    max_segment_angle_deg: float | None = 0.1,
+    sample_cap: int = 50_000,
+) -> float:
+    """Symmetric Hausdorff distance over polygon boundaries."""
+    polygon_a = Polygon(exterior_a, holes_a)
+    polygon_b = Polygon(exterior_b, holes_b)
+
+    return float(
+        _geodist_rs.hausdorff_polygon_boundary(
+            polygon_a._handle,
+            polygon_b._handle,
+            max_segment_length_m,
+            max_segment_angle_deg,
+            int(sample_cap),
+        )
     )

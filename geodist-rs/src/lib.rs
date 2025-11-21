@@ -59,7 +59,9 @@ pub use hausdorff::{
   hausdorff_directed_3d_on_ellipsoid, hausdorff_directed_clipped, hausdorff_directed_clipped_3d,
   hausdorff_directed_clipped_3d_on_ellipsoid,
 };
-pub use polygon::Polygon;
+pub use polygon::{
+  BoundaryDirectedWitness, BoundaryHausdorffWitness, Polygon, hausdorff_boundary, hausdorff_boundary_directed,
+};
 pub use polyline::{DensificationOptions, FlattenedPolyline, densify_multiline, densify_polyline};
 pub use types::{
   BoundingBox, Distance, Ellipsoid, GeodistError, Point, Point3D, RingOrientation, VertexValidationError,
