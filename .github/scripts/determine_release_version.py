@@ -2,7 +2,8 @@
 
 Behaviors:
 - pull_request: read the Python package version from pygeodist/pyproject.toml
-- tag push / manual run on tag: validate tag format vMAJOR.MINOR.PATCH and emit version
+- tag push or manual run on a tag: validate tag format vMAJOR.MINOR.PATCH and emit version
+- manual run on a branch: read the Python package version from pygeodist/pyproject.toml
 """
 
 from __future__ import annotations
@@ -38,14 +39,19 @@ def main() -> int:
     event = os.environ.get("GITHUB_EVENT_NAME", "")
     ref_type = os.environ.get("GITHUB_REF_TYPE", "")
     ref_name = os.environ.get("GITHUB_REF_NAME", "")
+    root = repo_root()
 
     try:
         if event == "pull_request":
-            version = version_from_manifest(repo_root())
-        else:
-            if ref_type != "tag":
-                raise ValueError(f"This workflow only runs from tags (got {ref_type}).")
+            version = version_from_manifest(root)
+        elif ref_type == "tag":
             version = version_from_tag(ref_name)
+        elif event == "workflow_dispatch":
+            version = version_from_manifest(root)
+        else:
+            raise ValueError(
+                f"This workflow only supports tags or manual dispatch (got {ref_type or event}).",
+            )
     except Exception as exc:  # noqa: BLE001
         sys.stderr.write(f"{exc}\n")
         return 1
