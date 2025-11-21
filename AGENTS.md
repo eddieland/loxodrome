@@ -50,3 +50,7 @@
 
 - No secrets should ever be committed; prefer env vars for credentials in future data-dependent benchmarks.
 - Respect pinned toolchains: Python 3.10+ (per `pyproject.toml`) and Rust toolchain in `rust-toolchain.toml`. If tooling versions change, update pins and mention in PR notes.
+
+## CI and Automation
+
+- Python snippets used in GitHub Actions must live as standalone scripts under `.github/scripts/` instead of being embedded inline in workflow YAML.

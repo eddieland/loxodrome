@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
   workflow_dispatch:
     inputs:
       publish_live:
@@ -37,9 +38,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate release tag
+      - name: Determine release version
         id: discover
         run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            version=$(python - <<'PY'
+import pathlib
+import tomllib
+
+root = pathlib.Path(__file__).resolve().parents[2]
+manifest = root / "pygeodist" / "pyproject.toml"
+data = tomllib.loads(manifest.read_text())
+print(data["project"]["version"])
+PY
+)
+            echo "version=${version}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
           if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
             echo "This workflow only runs from tags (got ${GITHUB_REF_TYPE})." >&2
             exit 1
@@ -64,6 +82,11 @@ jobs:
           DISPATCH_LIVE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_live || 'false' }}
           VAR_LIVE: ${{ vars.PUBLISH_LIVE || 'false' }}
         run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            echo "live=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
           if [[ "${DISPATCH_LIVE}" == "true" || "${VAR_LIVE}" == "true" ]]; then
             echo "live=true" >> "${GITHUB_OUTPUT}"
           else
@@ -322,6 +345,9 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
+
+      - name: Remove stale compiled extensions
+        run: python .github/scripts/remove_stale_extensions.py
 
       - name: Build wheel
         if: matrix.os == 'ubuntu-latest'

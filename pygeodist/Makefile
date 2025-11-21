@@ -55,6 +55,9 @@ clean: ## Clean up build artifacts and caches
 	-rm -rf .venv/
 	-rm -rf ../geodist-rs/target/
 	-find . -type d -name "__pycache__" -exec rm -rf {} +
+	-find src/geodist -maxdepth 1 -type f \
+	  \( -name "_geodist_rs*.so" -o -name "_geodist_rs*.pyd" -o -name "_geodist_rs*.dylib" -o -name "_geodist_rs*.dll" \) \
+	  -delete
 
 .PHONY: develop
 develop: ## Build and install Rust extension into the uv environment
