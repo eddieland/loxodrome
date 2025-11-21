@@ -233,66 +233,82 @@ jobs:
             python-version: "3.10"
             target: x86_64-unknown-linux-gnu
             manylinux: manylinux2014
+            python-abi: cp310-cp310
           - os: ubuntu-latest
             python-version: "3.11"
             target: x86_64-unknown-linux-gnu
             manylinux: manylinux2014
+            python-abi: cp311-cp311
           - os: ubuntu-latest
             python-version: "3.12"
             target: x86_64-unknown-linux-gnu
             manylinux: manylinux2014
+            python-abi: cp312-cp312
           - os: ubuntu-latest
             python-version: "3.13"
             target: x86_64-unknown-linux-gnu
             manylinux: manylinux2014
+            python-abi: cp313-cp313
           - os: macos-14
             python-version: "3.10"
             target: aarch64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-14
             python-version: "3.11"
             target: aarch64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-14
             python-version: "3.12"
             target: aarch64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-14
             python-version: "3.13"
             target: aarch64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-13
             python-version: "3.10"
             target: x86_64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-13
             python-version: "3.11"
             target: x86_64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-13
             python-version: "3.12"
             target: x86_64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: macos-13
             python-version: "3.13"
             target: x86_64-apple-darwin
             manylinux: ""
+            python-abi: ""
           - os: windows-latest
             python-version: "3.10"
             target: x86_64-pc-windows-msvc
             manylinux: ""
+            python-abi: ""
           - os: windows-latest
             python-version: "3.11"
             target: x86_64-pc-windows-msvc
             manylinux: ""
+            python-abi: ""
           - os: windows-latest
             python-version: "3.12"
             target: x86_64-pc-windows-msvc
             manylinux: ""
+            python-abi: ""
           - os: windows-latest
             python-version: "3.13"
             target: x86_64-pc-windows-msvc
             manylinux: ""
+            python-abi: ""
     env:
       RUSTFLAGS: -D warnings
     steps:
@@ -313,16 +329,15 @@ jobs:
         with:
           maturin-version: latest
           rust-toolchain: nightly
-          manylinux: auto
+          manylinux: manylinux_2_28
           target: ${{ matrix.target }}
           working-directory: pygeodist
           args: >-
             --release
             --locked
             --out dist
-            --interpreter python
+            --interpreter /opt/python/${{ matrix.python-abi }}/bin/python
           sccache: "true"
-          container: "quay.io/pypa/manylinux2014_x86_64:latest"
 
       - name: Build source distribution
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
@@ -331,6 +346,7 @@ jobs:
           command: sdist
           maturin-version: latest
           rust-toolchain: nightly
+          manylinux: manylinux_2_28
           working-directory: pygeodist
           args: >-
             --out dist
