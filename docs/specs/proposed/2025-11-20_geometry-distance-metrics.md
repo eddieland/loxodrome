@@ -26,9 +26,36 @@
 - **Polygon:** Polygons represent filled regions (exterior minus holes). Sample every ring with the same densification knobs as polylines, respecting orientation and closure tolerance. Add interior coverage points per polygon via a quasi-grid seeded from bbox intersections at `interior_spacing_m` (default 200 m) so distances account for filled area. Holes contribute samples that mark voids (distance counts from hole boundary outward). Reject polygons whose holes overlap or touch the exterior. For shapes crossing the antimeridian or touching poles, grid seeding respects wraparound and clips at ±90° without distorting longitudes.
 - **MultiPoint/Line/Polygon:** Validate homogeneous dimensionality. Evaluate metrics componentwise but report a unified witness that includes the originating part index.
 
+### Polyline densification & validation (P0)
+
+- Validate every vertex before sampling: lat in [-90°, 90°], lon finite (±180° inclusive), no NaN/Inf. Report `InvalidGeometryError` with the 0-based vertex index on failure so callers can prune bad inputs early.
+- Consecutive duplicate vertices are allowed but generate a single sample; zero-length segments are skipped for densification to avoid exploding counts while preserving original vertex ordering for witness indices.
+- Per segment, compute the number of subsegments as `n = max(ceil(dist_m / max_segment_length_m), ceil(heading_change_deg / max_segment_angle_deg))`, ignoring a term when its knob is unset. Enforce `n >= 1`; insert intermediate points at equal arc-length fractions along the great-circle between the two vertices. Always emit the first vertex of the geometry, then append intermediates, then the segment’s end vertex to keep deterministic ordering.
+- Require at least one densification knob; if both are missing, raise `InvalidGeometryError` with a message pointing to `max_segment_length_m` and `max_segment_angle_deg` defaults.
+- Apply the 50_000-sample cap across the fully densified geometry (after duplicate collapsing). When predicted samples exceed the cap, fail fast with the expected count and part index. Example: a 6,000 km LineString at the 100 m default would need ~60,001 samples, so it errors and suggests raising `max_segment_length_m` or using a larger `max_segment_angle_deg`.
+- Deterministic sampling examples to anchor fixtures: a 10 km LineString at defaults produces 101 samples (100 m spacing with endpoints retained); a 250 m segment with both knobs set uses the max of the two splits so spacing never exceeds either tolerance.
+
+### Polyline Hausdorff + Chamfer APIs (P0)
+
+- Python shape (public API):
+  - `geodist.hausdorff(polyline_a, polyline_b, *, symmetric=True, bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
+  - `geodist.chamfer(polyline_a, polyline_b, *, symmetric=True, reduction="mean", bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
+  - `polyline_*` accept `LineString` or `MultiLineString`-shaped inputs (array-likes or shapely/geojson-compatible tuples). Require at least one densification knob. `symmetric=False` computes the directed A→B variant.
+- Rust shape (crate API sketch):
+  - `fn hausdorff_polyline(a: &Polyline, b: &Polyline, opts: HausdorffOpts) -> HausdorffResult;`
+  - `fn chamfer_polyline(a: &Polyline, b: &Polyline, opts: ChamferOpts) -> ChamferResult;`
+  - Options mirror Python: `symmetric: bool`, `reduction: Reduction`, `bbox: Option<BoundingBox>`, densification knobs, `sample_cap`, and `return_witness` equivalent.
+- `_geodist_rs.pyi` witness typing: `class Witness(TypedDict)` with fields: `source_part: int`, `source_index: int`, `target_part: int`, `target_index: int`, `source_coord: tuple[float, float]`, `target_coord: tuple[float, float]`, `distance_m: float`.
+- Witness emission rules:
+  - Directed Hausdorff returns the farthest (max) distance sample in the A→B direction; symmetric picks the realizing witness from the worse direction (A→B if equal after distance tie-break below).
+  - Chamfer only emits a witness when `reduction="max"` (otherwise aggregates distances without per-point payload). Witness schema matches Hausdorff; `distance_m` reflects the worst offending sample.
+  - Tie-break ordering: compare `distance_m` (with tolerance 1e-12 m for floating noise), then lowest `source_part`, then `source_index`, then `target_part`, then `target_index`. This must be deterministic across Rust/Python.
+- Return types: when `return_witness=False`, return scalar distance (float). When `True`, return `(distance, witness)` tuple; witness is `None` if the geometry empties from clipping (but note Hausdorff/Chamfer already error on empty after clip).
+- Error paths: propagate validation errors from densification; raise `InvalidGeometryError` when sampling cap is exceeded or inputs are empty post-clip. Clipping rules follow the section below.
+
 ## Distance Metric Semantics
 
-- **Hausdorff:** Provide directed (`A→B`) and symmetric (`max(A→B, B→A)`) over sampled point sets. Witness includes `source_part`, `source_index`, `target_part`, `target_index`, `source_coord`, `target_coord`, `distance_m`, with zero-based indices and tie-breaker on lowest source_index then target_index. Optionally return both distance and realizing coordinates.
+- **Hausdorff:** Provide directed (`A→B`) and symmetric (`max(A→B, B→A)`) over sampled point sets. Witness includes `source_part`, `source_index`, `target_part`, `target_index`, `source_coord`, `target_coord`, `distance_m`, with zero-based indices and tie-breaker on lowest `source_index` then `target_index`. Optionally return both distance and realizing coordinates.
 - **Fréchet:** Use discrete Fréchet on densified polylines (and ring boundaries). Respect vertex order; multi-part inputs either match paired parts or apply a documented set rule—default is max over directed distances across parts with witness of traversal paths (arrays of indices) to mirror Shapely/JTS expectations. Continuous variant deferred. Zero-based indices.
 - **Chamfer:** Compute mean nearest-neighbor distance for each direction with optional `reduction="mean" | "sum" | "max"`; symmetric mode averages (or maxes) both directions. Witness reports worst offending sample with the same schema as Hausdorff when `reduction="max"`. Default reduction is `mean` (scale-invariant).
 
@@ -49,8 +76,8 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Lock densification + validation for LineString/Polyline inputs | Defaults, bounds, and deterministic sampling order documented; sample-cap behavior called out with examples | Sets the first shippable surface | 📝 |
-| P0 | Specify Hausdorff + Chamfer APIs and witness payloads for polylines | Function signatures, reduction modes, tie-break rules, and `_geodist_rs.pyi` shape captured; matches current point Hausdorff contract | Enables early Rust/Python delivery on polylines | 📝 |
+| P0 | Lock densification + validation for LineString/Polyline inputs | Defaults, bounds, and deterministic sampling order documented; sample-cap behavior called out with examples | Sets the first shippable surface | ✅ |
+| P0 | Specify Hausdorff + Chamfer APIs and witness payloads for polylines | Function signatures, reduction modes, tie-break rules, and `_geodist_rs.pyi` shape captured; matches current point Hausdorff contract | Enables early Rust/Python delivery on polylines | ✅ |
 | P0 | Add end-to-end MultiLineString acceptance | Validation + sampling rules defined; witness shape records part indices; tests/fixtures sketched for LineString + MultiLineString parity | Delivers the first “additional data type” increment | 📝 |
 | P0 | Define clipping behavior for polyline metrics | Bbox rules, antimeridian handling, and empty-geometry failures documented with examples | Keeps first wave auditable | 📝 |
 | P1 | Ring validation + densification for Polygon/MultiPolygon (boundary-only) | Closure/orientation/containment checks and sampling defaults captured; explicit note that interior coverage is deferred | Unblocks perimeter-only distances as a second increment | 📝 |
@@ -76,9 +103,11 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ## Status Tracking (to be updated by subagent)
 
-- **Latest completed task:** _None yet (new spec)._
-- **Next up:** _Lock densification + validation for LineString/Polyline inputs._
+- **Latest completed task:** _Specify Hausdorff + Chamfer APIs and witness payloads for polylines._ 
+- **Next up:** _Add end-to-end MultiLineString acceptance._
 
 ## Lessons Learned (ongoing)
 
 - Deterministic sampling and shared clipping helpers are essential to keep Rust/Python parity and reproducibility.
+- Sample-cap rejections must spell out expected counts and tuning knobs so callers can pick coarser tolerances without silent truncation.
+- Witness schemas need deterministic tie-break ordering and shared `TypedDict`/struct definitions to keep Rust and Python aligned.
