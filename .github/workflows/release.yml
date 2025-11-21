@@ -284,6 +284,19 @@ jobs:
           sccache: "true"
           container: "quay.io/pypa/manylinux2014_x86_64:latest"
 
+      - name: Build source distribution
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          maturin-version: latest
+          rust-toolchain: nightly
+          working-directory: pygeodist
+          args: >-
+            --out dist
+          sccache: "true"
+          container: "quay.io/pypa/manylinux2014_x86_64:latest"
+
       - name: Build wheel
         if: matrix.os != 'ubuntu-latest'
         shell: bash
