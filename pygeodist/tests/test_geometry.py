@@ -137,3 +137,6 @@ def test_polygon_accepts_exterior_and_hole() -> None:
     exterior_out, holes_out = polygon.to_tuple()
     assert len(exterior_out) == 5
     assert len(holes_out) == 1
+
+    area_with_hole = polygon.area_m2()
+    assert math.isclose(area_with_hole, 11_869_151_341.039_658, rel_tol=0.0, abs_tol=1_000.0)

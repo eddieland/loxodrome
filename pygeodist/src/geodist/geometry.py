@@ -349,3 +349,7 @@ class Polygon:
         """Return a tuple of exterior and holes for inspection."""
         exterior, holes = self._handle.to_tuple()
         return list(exterior), [list(ring) for ring in holes]
+
+    def area_m2(self) -> float:
+        """Return the spherical area of the polygon in square meters."""
+        return float(self._handle.area_m2())

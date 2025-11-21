@@ -4,6 +4,9 @@
 //! Boundary sampling uses the polyline densifier; interior coverage grids are
 //! deferred.
 
+use std::f64::consts::{PI, TAU};
+
+use crate::constants::EARTH_RADIUS_METERS;
 use crate::polyline::{DensificationOptions, FlattenedPolyline, collapse_duplicates, densify_multiline};
 use crate::{GeodistError, Point, RingOrientation, VertexValidationError, geodesic_distance, hausdorff};
 
@@ -50,6 +53,18 @@ impl Polygon {
     parts.push(self.exterior.clone());
     parts.extend(self.holes.iter().cloned());
     densify_multiline(&parts, options)
+  }
+
+  /// Approximate polygon area on a spherical Earth (WGS84 mean radius).
+  ///
+  /// The exterior ring contributes positively; holes subtract. Orientation is
+  /// validated during construction, but results are clamped at zero to guard
+  /// against floating-point noise when holes nearly match the exterior.
+  pub fn area_square_meters(&self) -> f64 {
+    let exterior_area = ring_area_square_meters(&self.exterior).abs();
+    let holes_area: f64 = self.holes.iter().map(|ring| ring_area_square_meters(ring).abs()).sum();
+
+    (exterior_area - holes_area).max(0.0)
   }
 }
 
@@ -279,6 +294,26 @@ fn signed_area(vertices: &[Point]) -> f64 {
   sum
 }
 
+fn ring_area_square_meters(ring: &[Point]) -> f64 {
+  let mut sum = 0.0;
+
+  for edge in ring.windows(2) {
+    let (lat1, lon1) = (edge[0].lat.to_radians(), edge[0].lon.to_radians());
+    let (lat2, lon2) = (edge[1].lat.to_radians(), edge[1].lon.to_radians());
+
+    let mut delta_lon = lon2 - lon1;
+    if delta_lon > PI {
+      delta_lon -= TAU;
+    } else if delta_lon < -PI {
+      delta_lon += TAU;
+    }
+
+    sum += delta_lon * (lat1.sin() + lat2.sin());
+  }
+
+  0.5 * sum * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS
+}
+
 fn map_flat_index(offsets: &[usize], flat_index: usize) -> Result<(usize, usize), GeodistError> {
   for window in offsets.windows(2).enumerate() {
     let part = window.0;
@@ -352,6 +387,38 @@ mod tests {
       })
       .unwrap();
     assert_eq!(samples.part_offsets().len(), 3);
+  }
+
+  #[test]
+  fn computes_area_for_unit_square() {
+    let polygon = Polygon::new(ccw_square(), vec![]).unwrap();
+    let area = polygon.area_square_meters();
+
+    let expected = 12_363_718_145.180_046;
+    let tolerance = 1_000.0; // ~0.01% of the area.
+    assert!((area - expected).abs() < tolerance, "area={area} differs from expected");
+  }
+
+  #[test]
+  fn subtracts_hole_area() {
+    let exterior = ccw_square();
+    let hole = vec![
+      Point::new(0.2, 0.2).unwrap(),
+      Point::new(0.4, 0.2).unwrap(),
+      Point::new(0.4, 0.4).unwrap(),
+      Point::new(0.2, 0.4).unwrap(),
+      Point::new(0.2, 0.2).unwrap(),
+    ];
+
+    let polygon = Polygon::new(exterior, vec![hole]).unwrap();
+    let area = polygon.area_square_meters();
+
+    let expected = 11_869_151_341.039_658;
+    let tolerance = 1_000.0;
+    assert!(
+      (area - expected).abs() < tolerance,
+      "area with hole={area} differs from expected"
+    );
   }
 
   #[test]

@@ -229,6 +229,12 @@ impl Polygon {
     Ok(Self { inner: polygon })
   }
 
+  /// Return the spherical area of the polygon (square meters) using the WGS84
+  /// mean Earth radius.
+  pub fn area_m2(&self) -> f64 {
+    self.inner.area_square_meters()
+  }
+
   fn __repr__(&self) -> String {
     "Polygon(...)".to_string()
   }
