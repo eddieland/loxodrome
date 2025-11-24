@@ -12,6 +12,10 @@ use crate::distance::geodesic_distance;
 use crate::{GeodistError, Point, VertexValidationError};
 
 /// Options controlling polyline densification.
+///
+/// At least one of [`max_segment_length_m`] or [`max_segment_angle_deg`] must
+/// be provided to bound spacing between emitted samples. [`sample_cap`] limits
+/// the total number of generated points to guard against runaway densification.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DensificationOptions {
   /// Maximum allowed chord length per subsegment in meters.
@@ -42,6 +46,10 @@ impl DensificationOptions {
 }
 
 /// Flattened samples for a (multi)polyline with part offsets preserved.
+///
+/// Samples are stored contiguously in traversal order, while `part_offsets`
+/// records the start index of each component polyline to avoid re-allocating
+/// nested vectors.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FlattenedPolyline {
   samples: Vec<Point>,
@@ -94,6 +102,12 @@ impl FlattenedPolyline {
 }
 
 /// Densify a single polyline into ordered samples.
+///
+/// Collapses consecutive duplicate vertices, validates latitude/longitude
+/// ranges, and inserts intermediate samples along great-circle arcs according
+/// to the provided [`DensificationOptions`]. Returns an error if the input is
+/// degenerate after de-duplication, if no spacing knobs are configured, or if
+/// densification would exceed the configured sample cap.
 pub fn densify_polyline(vertices: &[Point], options: DensificationOptions) -> Result<Vec<Point>, GeodistError> {
   options.validate()?;
   let deduped = validate_polyline(vertices, None)?;
@@ -104,6 +118,12 @@ pub fn densify_polyline(vertices: &[Point], options: DensificationOptions) -> Re
 
 /// Densify a MultiLineString-structured collection of polylines, returning
 /// flattened samples and part offsets.
+///
+/// Each part is validated independently with part indices threaded through
+/// errors for caller context. Offsets in the returned [`FlattenedPolyline`]
+/// reference the starting index of each part within the flattened samples.
+/// Returns [`GeodistError::SampleCapExceeded`] when the accumulated emission
+/// would cross the configured cap.
 pub fn densify_multiline(
   parts: &[Vec<Point>],
   options: DensificationOptions,
@@ -271,6 +291,10 @@ fn interpolate_segment(start: Point, end: Point, central_angle_rad: f64, split_c
   points
 }
 
+/// Collapse consecutive duplicate vertices while preserving order.
+///
+/// Intended as a preprocessing step before sampling so zero-length segments do
+/// not inflate counts or produce ambiguous offsets.
 pub fn collapse_duplicates(vertices: &[Point]) -> Vec<Point> {
   let mut deduped = Vec::with_capacity(vertices.len());
   let mut last: Option<Point> = None;
