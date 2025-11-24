@@ -26,6 +26,25 @@ pub struct DensificationOptions {
   pub sample_cap: usize,
 }
 
+trait SegmentGeometry {
+  type SegmentData: Copy;
+
+  fn describe_segment(
+    &self,
+    start: Point,
+    end: Point,
+    options: &DensificationOptions,
+    start_index: usize,
+  ) -> Result<Option<SegmentDescriptor<Self::SegmentData>>, GeodistError>;
+
+  fn interpolate_segment(
+    &self,
+    start: Point,
+    end: Point,
+    descriptor: &SegmentDescriptor<Self::SegmentData>,
+  ) -> Vec<Point>;
+}
+
 impl Default for DensificationOptions {
   fn default() -> Self {
     Self {
@@ -109,11 +128,7 @@ impl FlattenedPolyline {
 /// degenerate after de-duplication, if no spacing knobs are configured, or if
 /// densification would exceed the configured sample cap.
 pub fn densify_polyline(vertices: &[Point], options: DensificationOptions) -> Result<Vec<Point>, GeodistError> {
-  options.validate()?;
-  let deduped = validate_polyline(vertices, None)?;
-
-  let segments = build_segments(&deduped, &options)?;
-  densify_segments(&segments, &deduped, &options.sample_cap, None)
+  densify_polyline_with_geometry(vertices, options, &GreatCircleGeometry)
 }
 
 /// Densify a MultiLineString-structured collection of polylines, returning
@@ -128,6 +143,26 @@ pub fn densify_multiline(
   parts: &[Vec<Point>],
   options: DensificationOptions,
 ) -> Result<FlattenedPolyline, GeodistError> {
+  densify_multiline_with_geometry(parts, options, &GreatCircleGeometry)
+}
+
+fn densify_polyline_with_geometry<G: SegmentGeometry>(
+  vertices: &[Point],
+  options: DensificationOptions,
+  geometry: &G,
+) -> Result<Vec<Point>, GeodistError> {
+  options.validate()?;
+  let deduped = validate_polyline(vertices, None)?;
+
+  let segments = build_segments(&deduped, &options, geometry)?;
+  densify_segments(&segments, &deduped, &options.sample_cap, None, geometry)
+}
+
+fn densify_multiline_with_geometry<G: SegmentGeometry>(
+  parts: &[Vec<Point>],
+  options: DensificationOptions,
+  geometry: &G,
+) -> Result<FlattenedPolyline, GeodistError> {
   options.validate()?;
 
   let mut result = Vec::new();
@@ -141,7 +176,7 @@ pub fn densify_multiline(
     validator.set_part_index(part_index);
     let deduped = validate_polyline(part, Some(part_index))?;
 
-    let segments = build_segments(&deduped, &options)?;
+    let segments = build_segments(&deduped, &options, geometry)?;
     // Pre-flight cap check before emitting.
     let expected = 1 + segments.iter().map(|info| info.split_count).sum::<usize>();
     let predicted_total = total_samples + expected;
@@ -153,7 +188,7 @@ pub fn densify_multiline(
       });
     }
 
-    let mut samples = densify_segments(&segments, &deduped, &options.sample_cap, Some(part_index))?;
+    let mut samples = densify_segments(&segments, &deduped, &options.sample_cap, Some(part_index), geometry)?;
     total_samples = predicted_total;
     offsets.push(offsets.last().copied().unwrap_or(0) + samples.len());
     result.append(&mut samples);
@@ -166,66 +201,38 @@ pub fn densify_multiline(
 }
 
 #[derive(Debug, Clone, Copy)]
-struct SegmentInfo {
+struct SegmentDescriptor<G> {
   start_index: usize,
   end_index: usize,
-  central_angle_rad: f64,
   split_count: usize,
+  geometry: G,
 }
 
-fn build_segments(vertices: &[Point], options: &DensificationOptions) -> Result<Vec<SegmentInfo>, GeodistError> {
+fn build_segments<G: SegmentGeometry>(
+  vertices: &[Point],
+  options: &DensificationOptions,
+  geometry: &G,
+) -> Result<Vec<SegmentDescriptor<G::SegmentData>>, GeodistError> {
   let mut segments = Vec::with_capacity(vertices.len().saturating_sub(1));
 
   for (index, window) in vertices.windows(2).enumerate() {
     let start = window[0];
     let end = window[1];
-    let distance = geodesic_distance(start, end)?.meters();
 
-    // Skip zero-length segments while preserving ordering.
-    if distance == 0.0 {
-      continue;
+    if let Some(descriptor) = geometry.describe_segment(start, end, options, index)? {
+      segments.push(descriptor);
     }
-
-    let split_count = segment_split_count(distance, options);
-    let central_angle_rad = distance / EARTH_RADIUS_METERS;
-
-    segments.push(SegmentInfo {
-      start_index: index,
-      end_index: index + 1,
-      central_angle_rad,
-      split_count,
-    });
   }
 
   Ok(segments)
 }
 
-fn segment_split_count(distance_m: f64, options: &DensificationOptions) -> usize {
-  let mut splits = 1usize;
-
-  if let Some(max_length) = options.max_segment_length_m
-    && max_length > 0.0
-  {
-    let parts = (distance_m / max_length).ceil() as usize;
-    splits = splits.max(parts);
-  }
-
-  if let Some(max_angle) = options.max_segment_angle_deg
-    && max_angle > 0.0
-  {
-    let central_angle_deg = (distance_m / EARTH_RADIUS_METERS) * (180.0 / PI);
-    let parts = (central_angle_deg / max_angle).ceil() as usize;
-    splits = splits.max(parts);
-  }
-
-  splits.max(1)
-}
-
-fn densify_segments(
-  segments: &[SegmentInfo],
+fn densify_segments<G: SegmentGeometry>(
+  segments: &[SegmentDescriptor<G::SegmentData>],
   vertices: &[Point],
   sample_cap: &usize,
   part_index: Option<usize>,
+  geometry: &G,
 ) -> Result<Vec<Point>, GeodistError> {
   if segments.is_empty() {
     // All segments collapsed to duplicates; emit one sample for the retained
@@ -248,47 +255,106 @@ fn densify_segments(
   for segment in segments {
     let start = vertices[segment.start_index];
     let end = vertices[segment.end_index];
-    samples.extend(interpolate_segment(
-      start,
-      end,
-      segment.central_angle_rad,
-      segment.split_count,
-    ));
+    samples.extend(geometry.interpolate_segment(start, end, segment));
   }
 
   Ok(samples)
 }
 
-fn interpolate_segment(start: Point, end: Point, central_angle_rad: f64, split_count: usize) -> Vec<Point> {
-  let mut points = Vec::with_capacity(split_count);
+#[derive(Debug, Clone, Copy)]
+struct GreatCircleGeometry;
 
-  // Prevent divide-by-zero in degenerate cases; zero-length segments are
-  // filtered earlier so this represents extremely short arcs.
-  let sin_delta = central_angle_rad.sin();
-  if sin_delta == 0.0 {
-    points.push(end);
-    return points;
+impl GreatCircleGeometry {
+  fn segment_split_count(distance_m: f64, central_angle_rad: f64, options: &DensificationOptions) -> usize {
+    let mut splits = 1usize;
+
+    if let Some(max_length) = options.max_segment_length_m
+      && max_length > 0.0
+    {
+      let parts = (distance_m / max_length).ceil() as usize;
+      splits = splits.max(parts);
+    }
+
+    if let Some(max_angle) = options.max_segment_angle_deg
+      && max_angle > 0.0
+    {
+      let central_angle_deg = central_angle_rad * (180.0 / PI);
+      let parts = (central_angle_deg / max_angle).ceil() as usize;
+      splits = splits.max(parts);
+    }
+
+    splits.max(1)
   }
 
-  let (lat1, lon1) = (start.lat.to_radians(), start.lon.to_radians());
-  let (lat2, lon2) = (end.lat.to_radians(), end.lon.to_radians());
+  fn interpolate_segment(start: Point, end: Point, central_angle_rad: f64, split_count: usize) -> Vec<Point> {
+    let mut points = Vec::with_capacity(split_count);
 
-  for step in 1..=split_count {
-    let fraction = step as f64 / split_count as f64;
-    let a = ((1.0 - fraction) * central_angle_rad).sin() / sin_delta;
-    let b = (fraction * central_angle_rad).sin() / sin_delta;
+    // Prevent divide-by-zero in degenerate cases; zero-length segments are
+    // filtered earlier so this represents extremely short arcs.
+    let sin_delta = central_angle_rad.sin();
+    if sin_delta == 0.0 {
+      points.push(end);
+      return points;
+    }
 
-    let x = a * lat1.cos() * lon1.cos() + b * lat2.cos() * lon2.cos();
-    let y = a * lat1.cos() * lon1.sin() + b * lat2.cos() * lon2.sin();
-    let z = a * lat1.sin() + b * lat2.sin();
+    let (lat1, lon1) = (start.lat.to_radians(), start.lon.to_radians());
+    let (lat2, lon2) = (end.lat.to_radians(), end.lon.to_radians());
 
-    let lat = z.atan2((x * x + y * y).sqrt());
-    let lon = y.atan2(x);
+    for step in 1..=split_count {
+      let fraction = step as f64 / split_count as f64;
+      let a = ((1.0 - fraction) * central_angle_rad).sin() / sin_delta;
+      let b = (fraction * central_angle_rad).sin() / sin_delta;
 
-    points.push(Point::new_unchecked(lat.to_degrees(), lon.to_degrees()));
+      let x = a * lat1.cos() * lon1.cos() + b * lat2.cos() * lon2.cos();
+      let y = a * lat1.cos() * lon1.sin() + b * lat2.cos() * lon2.sin();
+      let z = a * lat1.sin() + b * lat2.sin();
+
+      let lat = z.atan2((x * x + y * y).sqrt());
+      let lon = y.atan2(x);
+
+      points.push(Point::new_unchecked(lat.to_degrees(), lon.to_degrees()));
+    }
+
+    points
+  }
+}
+
+impl SegmentGeometry for GreatCircleGeometry {
+  type SegmentData = f64;
+
+  fn describe_segment(
+    &self,
+    start: Point,
+    end: Point,
+    options: &DensificationOptions,
+    start_index: usize,
+  ) -> Result<Option<SegmentDescriptor<Self::SegmentData>>, GeodistError> {
+    let distance = geodesic_distance(start, end)?.meters();
+
+    // Skip zero-length segments while preserving ordering.
+    if distance == 0.0 {
+      return Ok(None);
+    }
+
+    let central_angle_rad = distance / EARTH_RADIUS_METERS;
+    let split_count = Self::segment_split_count(distance, central_angle_rad, options);
+
+    Ok(Some(SegmentDescriptor {
+      start_index,
+      end_index: start_index + 1,
+      split_count,
+      geometry: central_angle_rad,
+    }))
   }
 
-  points
+  fn interpolate_segment(
+    &self,
+    start: Point,
+    end: Point,
+    descriptor: &SegmentDescriptor<Self::SegmentData>,
+  ) -> Vec<Point> {
+    Self::interpolate_segment(start, end, descriptor.geometry, descriptor.split_count)
+  }
 }
 
 /// Collapse consecutive duplicate vertices while preserving order.
