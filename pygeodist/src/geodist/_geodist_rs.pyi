@@ -58,6 +58,19 @@ class LineString:
     ) -> list[Point]: ...
     def __len__(self) -> int: ...
 
+class DensificationOptions:
+    max_segment_length_m: float | None
+    max_segment_angle_deg: float | None
+    sample_cap: int
+
+    def __init__(
+        self,
+        max_segment_length_m: float | None = ...,
+        max_segment_angle_deg: float | None = ...,
+        sample_cap: int = ...,
+    ) -> None: ...
+    def to_tuple(self) -> tuple[float | None, float | None, int]: ...
+
 class GeodesicSolution:
     distance_m: float
     initial_bearing_deg: float
@@ -85,6 +98,20 @@ class HausdorffWitness:
         tuple[float, int, int],
     ]: ...
 
+class PolylineDirectedWitness:
+    distance_m: float
+    source_part: int
+    source_index: int
+    target_part: int
+    target_index: int
+    source_coord: Point
+    target_coord: Point
+
+class PolylineHausdorffWitness:
+    distance_m: float
+    a_to_b: PolylineDirectedWitness
+    b_to_a: PolylineDirectedWitness
+
 class BoundingBox:
     min_lat: float
     max_lat: float
@@ -111,12 +138,34 @@ def hausdorff_directed_clipped(
     a: list[Point], b: list[Point], bounding_box: BoundingBox
 ) -> HausdorffDirectedWitness: ...
 def hausdorff_clipped(a: list[Point], b: list[Point], bounding_box: BoundingBox) -> HausdorffWitness: ...
+def hausdorff_directed_polyline(
+    a: list[LineString],
+    b: list[LineString],
+    options: DensificationOptions | None = ...,
+) -> PolylineDirectedWitness: ...
+def hausdorff_polyline(
+    a: list[LineString],
+    b: list[LineString],
+    options: DensificationOptions | None = ...,
+) -> PolylineHausdorffWitness: ...
 def hausdorff_directed_3d(a: list[Point3D], b: list[Point3D]) -> HausdorffDirectedWitness: ...
 def hausdorff_3d(a: list[Point3D], b: list[Point3D]) -> HausdorffWitness: ...
 def hausdorff_directed_clipped_3d(
     a: list[Point3D], b: list[Point3D], bounding_box: BoundingBox
 ) -> HausdorffDirectedWitness: ...
 def hausdorff_clipped_3d(a: list[Point3D], b: list[Point3D], bounding_box: BoundingBox) -> HausdorffWitness: ...
+def hausdorff_directed_polyline_clipped(
+    a: list[LineString],
+    b: list[LineString],
+    bounding_box: BoundingBox,
+    options: DensificationOptions | None = ...,
+) -> PolylineDirectedWitness: ...
+def hausdorff_polyline_clipped(
+    a: list[LineString],
+    b: list[LineString],
+    bounding_box: BoundingBox,
+    options: DensificationOptions | None = ...,
+) -> PolylineHausdorffWitness: ...
 def hausdorff_polygon_boundary(
     a: Polygon,
     b: Polygon,
@@ -169,9 +218,12 @@ __all__ = [
     "Point3D",
     "Polygon",
     "LineString",
+    "DensificationOptions",
     "GeodesicSolution",
     "HausdorffDirectedWitness",
     "HausdorffWitness",
+    "PolylineDirectedWitness",
+    "PolylineHausdorffWitness",
     "BoundingBox",
     "geodesic_distance",
     "geodesic_distance_on_ellipsoid",
@@ -182,10 +234,14 @@ __all__ = [
     "hausdorff",
     "hausdorff_directed_clipped",
     "hausdorff_clipped",
+    "hausdorff_directed_polyline",
+    "hausdorff_polyline",
     "hausdorff_directed_3d",
     "hausdorff_3d",
     "hausdorff_directed_clipped_3d",
     "hausdorff_clipped_3d",
+    "hausdorff_directed_polyline_clipped",
+    "hausdorff_polyline_clipped",
     "hausdorff_polygon_boundary",
     "geodesic_distance_batch",
     "geodesic_with_bearings_batch",

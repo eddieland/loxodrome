@@ -108,6 +108,112 @@ impl HausdorffWitness {
   }
 }
 
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct PolylineDirectedWitness {
+  #[pyo3(get)]
+  distance_m: f64,
+  #[pyo3(get)]
+  source_part: usize,
+  #[pyo3(get)]
+  source_index: usize,
+  #[pyo3(get)]
+  target_part: usize,
+  #[pyo3(get)]
+  target_index: usize,
+  #[pyo3(get)]
+  source_coord: Point,
+  #[pyo3(get)]
+  target_coord: Point,
+}
+
+impl From<hausdorff_kernel::PolylineDirectedWitness> for PolylineDirectedWitness {
+  fn from(value: hausdorff_kernel::PolylineDirectedWitness) -> Self {
+    Self {
+      distance_m: value.distance().meters(),
+      source_part: value.source_part(),
+      source_index: value.source_index(),
+      target_part: value.target_part(),
+      target_index: value.target_index(),
+      source_coord: Point {
+        lat: value.source_coord().lat,
+        lon: value.source_coord().lon,
+      },
+      target_coord: Point {
+        lat: value.target_coord().lat,
+        lon: value.target_coord().lon,
+      },
+    }
+  }
+}
+
+#[pymethods]
+impl PolylineDirectedWitness {
+  fn __repr__(&self) -> String {
+    format!(
+      "PolylineDirectedWitness(distance_m={}, source_part={}, source_index={}, target_part={}, \
+       target_index={}, source_coord=Point(lat={}, lon={}), target_coord=Point(lat={}, lon={}))",
+      self.distance_m,
+      self.source_part,
+      self.source_index,
+      self.target_part,
+      self.target_index,
+      self.source_coord.lat,
+      self.source_coord.lon,
+      self.target_coord.lat,
+      self.target_coord.lon
+    )
+  }
+}
+
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct PolylineHausdorffWitness {
+  #[pyo3(get)]
+  distance_m: f64,
+  #[pyo3(get)]
+  a_to_b: PolylineDirectedWitness,
+  #[pyo3(get)]
+  b_to_a: PolylineDirectedWitness,
+}
+
+impl From<hausdorff_kernel::PolylineHausdorffWitness> for PolylineHausdorffWitness {
+  fn from(value: hausdorff_kernel::PolylineHausdorffWitness) -> Self {
+    Self {
+      distance_m: value.distance().meters(),
+      a_to_b: value.a_to_b().into(),
+      b_to_a: value.b_to_a().into(),
+    }
+  }
+}
+
+#[pymethods]
+impl PolylineHausdorffWitness {
+  fn __repr__(&self) -> String {
+    let dist = self.distance_m;
+    let format_leg = |leg: &PolylineDirectedWitness| {
+      format!(
+        "(distance_m={}, source_part={}, source_index={}, target_part={}, target_index={}, source_coord=({}, {}), target_coord=({}, {}))",
+        leg.distance_m,
+        leg.source_part,
+        leg.source_index,
+        leg.target_part,
+        leg.target_index,
+        leg.source_coord.lat,
+        leg.source_coord.lon,
+        leg.target_coord.lat,
+        leg.target_coord.lon
+      )
+    };
+    format!(
+      "PolylineHausdorffWitness(distance_m={}, a_to_b={}, b_to_a={})",
+      dist,
+      format_leg(&self.a_to_b),
+      format_leg(&self.b_to_a)
+    )
+  }
+}
+
 /// Oblate ellipsoid expressed via semi-major/minor axes (meters).
 #[pyclass(frozen)]
 #[derive(Debug, Clone)]
@@ -221,6 +327,18 @@ pub struct Polyline {
   vertices: Vec<types::Point>,
 }
 
+/// Options controlling polyline densification prior to Hausdorff evaluation.
+#[pyclass(name = "DensificationOptions", frozen)]
+#[derive(Debug, Clone)]
+pub struct PyDensificationOptions {
+  #[pyo3(get)]
+  max_segment_length_m: Option<f64>,
+  #[pyo3(get)]
+  max_segment_angle_deg: Option<f64>,
+  #[pyo3(get)]
+  sample_cap: usize,
+}
+
 #[pymethods]
 impl Polygon {
   #[new]
@@ -304,6 +422,44 @@ impl Polyline {
 
   const fn __len__(&self) -> PyResult<usize> {
     Ok(self.vertices.len())
+  }
+}
+
+#[pymethods]
+impl PyDensificationOptions {
+  #[new]
+  #[pyo3(signature = (max_segment_length_m = Some(100.0), max_segment_angle_deg = Some(0.1), sample_cap = 50_000))]
+  pub fn new(
+    max_segment_length_m: Option<f64>,
+    max_segment_angle_deg: Option<f64>,
+    sample_cap: usize,
+  ) -> PyResult<Self> {
+    map_densification_options_parts(max_segment_length_m, max_segment_angle_deg, sample_cap)?;
+
+    Ok(Self {
+      max_segment_length_m,
+      max_segment_angle_deg,
+      sample_cap,
+    })
+  }
+
+  /// Return a tuple `(max_segment_length_m, max_segment_angle_deg,
+  /// sample_cap)`.
+  pub const fn to_tuple(&self) -> (Option<f64>, Option<f64>, usize) {
+    (self.max_segment_length_m, self.max_segment_angle_deg, self.sample_cap)
+  }
+
+  fn __repr__(&self) -> String {
+    format!(
+      "DensificationOptions(max_segment_length_m={}, max_segment_angle_deg={}, sample_cap={})",
+      self
+        .max_segment_length_m
+        .map_or_else(|| "None".to_string(), |value| value.to_string()),
+      self
+        .max_segment_angle_deg
+        .map_or_else(|| "None".to_string(), |value| value.to_string()),
+      self.sample_cap
+    )
   }
 }
 
@@ -455,6 +611,10 @@ fn map_to_points3d(handles: &[Point3D]) -> PyResult<Vec<types::Point3D>> {
   handles.iter().map(map_to_point3d).collect::<Result<Vec<_>, _>>()
 }
 
+fn map_to_multiline(handles: &[Polyline]) -> Vec<Vec<types::Point>> {
+  handles.iter().map(|line| line.vertices.clone()).collect()
+}
+
 fn map_to_bounding_box(handle: &BoundingBox) -> PyResult<types::BoundingBox> {
   map_geodist_result(types::BoundingBox::new(
     handle.min_lat,
@@ -478,7 +638,7 @@ fn map_to_points_from_tuples(coords: &[(f64, f64)]) -> PyResult<Vec<types::Point
     .collect()
 }
 
-fn map_boundary_densification_opts(
+fn map_densification_options_parts(
   max_segment_length_m: Option<f64>,
   max_segment_angle_deg: Option<f64>,
   sample_cap: usize,
@@ -494,6 +654,26 @@ fn map_boundary_densification_opts(
     max_segment_angle_deg,
     sample_cap,
   })
+}
+
+fn map_densification_options(handle: Option<&PyDensificationOptions>) -> PyResult<polyline::DensificationOptions> {
+  if let Some(options) = handle {
+    return map_densification_options_parts(
+      options.max_segment_length_m,
+      options.max_segment_angle_deg,
+      options.sample_cap,
+    );
+  }
+
+  Ok(polyline::DensificationOptions::default())
+}
+
+fn map_boundary_densification_opts(
+  max_segment_length_m: Option<f64>,
+  max_segment_angle_deg: Option<f64>,
+  sample_cap: usize,
+) -> PyResult<polyline::DensificationOptions> {
+  map_densification_options_parts(max_segment_length_m, max_segment_angle_deg, sample_cap)
 }
 
 #[pyfunction]
@@ -589,6 +769,74 @@ fn hausdorff_clipped(a: Vec<Point>, b: Vec<Point>, bounding_box: &BoundingBox) -
 
   hausdorff_kernel::hausdorff_clipped(&points_a, &points_b, bbox)
     .map(HausdorffWitness::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, options = None))]
+fn hausdorff_directed_polyline(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<PolylineDirectedWitness> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let densification_options = map_densification_options(options)?;
+
+  hausdorff_kernel::hausdorff_directed_polyline(&parts_a, &parts_b, densification_options)
+    .map(PolylineDirectedWitness::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, options = None))]
+fn hausdorff_polyline(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<PolylineHausdorffWitness> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let densification_options = map_densification_options(options)?;
+
+  hausdorff_kernel::hausdorff_polyline(&parts_a, &parts_b, densification_options)
+    .map(PolylineHausdorffWitness::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, bounding_box, options = None))]
+fn hausdorff_directed_polyline_clipped(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  bounding_box: &BoundingBox,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<PolylineDirectedWitness> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let bbox = map_to_bounding_box(bounding_box)?;
+  let densification_options = map_densification_options(options)?;
+
+  hausdorff_kernel::hausdorff_directed_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
+    .map(PolylineDirectedWitness::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, bounding_box, options = None))]
+fn hausdorff_polyline_clipped(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  bounding_box: &BoundingBox,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<PolylineHausdorffWitness> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let bbox = map_to_bounding_box(bounding_box)?;
+  let densification_options = map_densification_options(options)?;
+
+  hausdorff_kernel::hausdorff_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
+    .map(PolylineHausdorffWitness::from)
     .map_err(map_geodist_error)
 }
 
@@ -1281,10 +1529,13 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_class::<Point3D>()?;
   m.add_class::<Polygon>()?;
   m.add_class::<Polyline>()?;
+  m.add_class::<PyDensificationOptions>()?;
   m.add_class::<GeodesicSolution>()?;
   m.add_class::<BoundingBox>()?;
   m.add_class::<HausdorffDirectedWitness>()?;
   m.add_class::<HausdorffWitness>()?;
+  m.add_class::<PolylineDirectedWitness>()?;
+  m.add_class::<PolylineHausdorffWitness>()?;
   m.add_function(wrap_pyfunction!(geodesic_distance, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_distance_on_ellipsoid, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings, m)?)?;
@@ -1294,10 +1545,14 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_function(wrap_pyfunction!(hausdorff, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_clipped, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_directed_polyline, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_polyline, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_clipped_3d, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_directed_polyline_clipped, m)?)?;
+  m.add_function(wrap_pyfunction!(hausdorff_polyline_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_polygon_boundary, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_distance_batch, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings_batch, m)?)?;
