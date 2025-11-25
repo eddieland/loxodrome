@@ -878,9 +878,10 @@ fn hausdorff_directed_indexed<A: GeodesicAlgorithm>(
       }
 
       if let Some(current) = nearest
-        && should_break_search(&current, meters) {
-          break;
-        }
+        && should_break_search(&current, meters)
+      {
+        break;
+      }
     }
 
     let origin_witness = nearest.expect("candidate set validated as non-empty");
@@ -955,9 +956,10 @@ fn hausdorff_directed_3d_indexed(
       }
 
       if let Some(current) = nearest
-        && should_break_search(&current, meters) {
-          break;
-        }
+        && should_break_search(&current, meters)
+      {
+        break;
+      }
     }
 
     let origin_witness = nearest.expect("candidate set validated as non-empty");

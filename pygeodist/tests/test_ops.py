@@ -131,9 +131,9 @@ def test_hausdorff_3d_clipped_filters_points() -> None:
 def test_polygon_boundary_hausdorff_matches_zero_for_identical() -> None:
     exterior = [
         (0.0, 0.0),
-        (0.0, 1.0),
-        (1.0, 1.0),
-        (1.0, 0.0),
+        (0.0, 0.01),
+        (0.01, 0.01),
+        (0.01, 0.0),
         (0.0, 0.0),
     ]
     distance = hausdorff_polygon_boundary(exterior, exterior)
