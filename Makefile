@@ -18,7 +18,7 @@ help: ## Display this help
 all: fmt lint test build ## Run formatting, linting, tests, and builds for all projects
 
 .PHONY: lint
-lint:
+lint: ## Run linting for Python and Rust projects
 	$(MAKE) -C $(PY_DIR) lint
 	$(MAKE) -C $(RS_DIR) lint
 

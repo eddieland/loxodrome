@@ -117,7 +117,7 @@ impl fmt::Display for GeodistError {
       Self::EmptyPointSet => write!(f, "point sets must be non-empty"),
       Self::MissingDensificationKnob => write!(
         f,
-        "polyline densification requires at least one knob: set max_segment_length_m and/or max_segment_angle_deg"
+        "polyline densification requires at least one knob: set max_segment_length_m (default 100 m) and/or max_segment_angle_deg (default 0.1 deg)"
       ),
       Self::DegeneratePolyline { part_index } => match part_index {
         Some(index) => write!(f, "polyline part {index} must contain at least two distinct vertices"),

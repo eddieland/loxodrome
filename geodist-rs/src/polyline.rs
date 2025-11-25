@@ -81,9 +81,43 @@ impl FlattenedPolyline {
     &self.samples
   }
 
+  /// Total number of emitted samples.
+  pub const fn len(&self) -> usize {
+    self.samples.len()
+  }
+
+  /// True when no samples are present.
+  pub const fn is_empty(&self) -> bool {
+    self.samples.is_empty()
+  }
+
+  /// Number of component parts in the flattened polyline.
+  pub const fn part_count(&self) -> usize {
+    self.part_offsets.len().saturating_sub(1)
+  }
+
   /// Offsets delimiting each part within the flattened samples.
   pub fn part_offsets(&self) -> &[usize] {
     &self.part_offsets
+  }
+
+  /// Map a flat sample index back to its originating part and index.
+  pub fn part_and_index(&self, flat_index: usize) -> Result<(usize, usize), GeodistError> {
+    if flat_index >= self.samples.len() {
+      return Err(GeodistError::InvalidDistance(flat_index as f64));
+    }
+
+    for window in self.part_offsets.windows(2).enumerate() {
+      let part = window.0;
+      let start = window.1[0];
+      let end = window.1[1];
+
+      if flat_index < end {
+        return Ok((part, flat_index - start));
+      }
+    }
+
+    Err(GeodistError::InvalidDistance(flat_index as f64))
   }
 
   /// Clip samples to a bounding box while preserving part offsets.
@@ -165,15 +199,17 @@ fn densify_multiline_with_geometry<G: SegmentGeometry>(
 ) -> Result<FlattenedPolyline, GeodistError> {
   options.validate()?;
 
+  if parts.is_empty() {
+    return Err(GeodistError::DegeneratePolyline { part_index: None });
+  }
+
   let mut result = Vec::new();
   let mut offsets = Vec::with_capacity(parts.len() + 1);
   offsets.push(0);
 
-  let mut validator = VertexValidator::new(Some(0));
   let mut total_samples = 0usize;
 
   for (part_index, part) in parts.iter().enumerate() {
-    validator.set_part_index(part_index);
     let deduped = validate_polyline(part, Some(part_index))?;
 
     let segments = build_segments(&deduped, &options, geometry)?;
@@ -401,10 +437,6 @@ impl VertexValidator {
     Self { part_index }
   }
 
-  const fn set_part_index(&mut self, part_index: usize) {
-    self.part_index = Some(part_index);
-  }
-
   fn check_vertices(&self, vertices: &[Point]) -> Result<(), GeodistError> {
     for (index, vertex) in vertices.iter().enumerate() {
       if !vertex.lat.is_finite()
@@ -465,6 +497,41 @@ mod tests {
   }
 
   #[test]
+  fn rejects_invalid_vertex_with_context() {
+    let options = DensificationOptions::default();
+    let valid = Point::new(0.0, 0.0).unwrap();
+    let near = Point::new(0.0, 0.001).unwrap();
+    let invalid = Point::new_unchecked(95.0, 0.1);
+
+    let result = densify_multiline(&[vec![valid, near], vec![valid, invalid]], options);
+    assert!(matches!(
+      result,
+      Err(GeodistError::InvalidVertex {
+        part_index: Some(1),
+        vertex_index: 1,
+        error: VertexValidationError::Latitude(value)
+      }) if (value - 95.0).abs() < f64::EPSILON
+    ));
+  }
+
+  #[test]
+  fn rejects_invalid_longitude() {
+    let options = DensificationOptions::default();
+    let valid = Point::new(0.0, 0.0).unwrap();
+    let invalid = Point::new_unchecked(0.0, 200.0);
+
+    let result = densify_polyline(&[valid, invalid], options);
+    assert!(matches!(
+      result,
+      Err(GeodistError::InvalidVertex {
+        part_index: None,
+        vertex_index: 1,
+        error: VertexValidationError::Longitude(value)
+      }) if (value - 200.0).abs() < f64::EPSILON
+    ));
+  }
+
+  #[test]
   fn densifies_to_expected_count() {
     // Approximately 10 km along the equator; defaults produce 100 m spacing.
     let start = Point::new(0.0, 0.0).unwrap();
@@ -519,6 +586,29 @@ mod tests {
   }
 
   #[test]
+  fn maps_flat_indices_with_offsets() {
+    let part_a = vec![Point::new(0.0, 0.0).unwrap(), Point::new(0.0, 0.001).unwrap()];
+    let part_b = vec![Point::new(1.0, 0.0).unwrap(), Point::new(1.0, 0.001).unwrap()];
+
+    let options = DensificationOptions {
+      max_segment_length_m: Some(500.0),
+      max_segment_angle_deg: None,
+      sample_cap: 50_000,
+    };
+
+    let flattened = densify_multiline(&[part_a, part_b], options).unwrap();
+    assert_eq!(flattened.part_count(), 2);
+    assert_eq!(flattened.len(), flattened.samples().len());
+    assert_eq!(flattened.part_and_index(0).unwrap(), (0, 0));
+    assert_eq!(flattened.part_and_index(1).unwrap(), (0, 1));
+    assert_eq!(flattened.part_and_index(2).unwrap(), (1, 0));
+    assert!(matches!(
+      flattened.part_and_index(flattened.len()),
+      Err(GeodistError::InvalidDistance(_))
+    ));
+  }
+
+  #[test]
   fn clipped_multiline_preserves_offsets_and_empties_error() {
     let part_a = vec![
       Point::new(0.0, 0.0).unwrap(),
@@ -542,5 +632,93 @@ mod tests {
     let empty_box = crate::BoundingBox::new(-1.0, 1.0, 50.0, 60.0).unwrap();
     let result = clipped.clip(&empty_box);
     assert!(matches!(result, Err(GeodistError::EmptyPointSet)));
+  }
+
+  #[test]
+  fn respects_stricter_angle_knob() {
+    // ~250 m along the equator: angle knob drives split count higher than length
+    // knob.
+    let start = Point::new(0.0, 0.0).unwrap();
+    let end = Point::new(0.0, 0.002_25).unwrap();
+
+    let options = DensificationOptions {
+      max_segment_length_m: Some(200.0),
+      max_segment_angle_deg: Some(0.0005),
+      sample_cap: 50_000,
+    };
+
+    let samples = densify_polyline(&[start, end], options).unwrap();
+    assert_eq!(samples.len(), 6);
+    assert_eq!(samples.first().copied().unwrap(), start);
+    let last = samples.last().copied().unwrap();
+    assert!((last.lat - end.lat).abs() < 1e-12);
+    assert!((last.lon - end.lon).abs() < 1e-8);
+  }
+
+  #[test]
+  fn collapses_consecutive_duplicates_before_sampling() {
+    let a = Point::new(0.0, 0.0).unwrap();
+    let b = Point::new(0.0, 0.01).unwrap();
+    let c = Point::new(0.0, 0.02).unwrap();
+
+    let options = DensificationOptions {
+      max_segment_length_m: Some(500.0),
+      max_segment_angle_deg: None,
+      sample_cap: 50_000,
+    };
+
+    let with_duplicates = densify_polyline(&[a, b, b, b, c], options).unwrap();
+    let deduped = densify_polyline(&[a, b, c], options).unwrap();
+    assert_eq!(with_duplicates, deduped);
+  }
+
+  #[test]
+  fn rejects_empty_multiline() {
+    let options = DensificationOptions::default();
+    let result = densify_multiline(&[], options);
+    assert!(matches!(
+      result,
+      Err(GeodistError::DegeneratePolyline { part_index: None })
+    ));
+  }
+
+  #[test]
+  fn rejects_degenerate_part_even_if_others_valid() {
+    let options = DensificationOptions::default();
+    let degenerate = vec![Point::new(0.0, 0.0).unwrap()];
+    let valid = vec![Point::new(1.0, 0.0).unwrap(), Point::new(1.0, 0.01).unwrap()];
+
+    let result = densify_multiline(&[degenerate, valid], options);
+    assert!(matches!(
+      result,
+      Err(GeodistError::DegeneratePolyline { part_index: Some(0) })
+    ));
+  }
+
+  #[test]
+  fn sample_cap_counts_across_parts() {
+    let part_a = vec![Point::new(0.0, 0.0).unwrap(), Point::new(0.0, 0.001_1).unwrap()];
+    let part_b = vec![Point::new(1.0, 0.0).unwrap(), Point::new(1.0, 0.001_1).unwrap()];
+
+    let options = DensificationOptions {
+      max_segment_length_m: Some(100.0),
+      max_segment_angle_deg: None,
+      sample_cap: 5,
+    };
+
+    let result = densify_multiline(&[part_a, part_b], options);
+    let Err(GeodistError::SampleCapExceeded {
+      expected,
+      cap,
+      part_index,
+    }) = result
+    else {
+      assert!(matches!(result, Err(GeodistError::SampleCapExceeded { .. })));
+      return;
+    };
+
+    assert_eq!(cap, 5);
+    assert_eq!(expected, 6);
+    assert_eq!(part_index, Some(1));
   }
 }

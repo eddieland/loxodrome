@@ -145,8 +145,8 @@ pub fn hausdorff_boundary_directed(
   let samples_b = b.densify_boundaries(options)?;
 
   let witness = hausdorff::hausdorff_directed(samples_a.samples(), samples_b.samples())?;
-  let (source_part, source_index) = map_flat_index(samples_a.part_offsets(), witness.origin_index())?;
-  let (target_part, target_index) = map_flat_index(samples_b.part_offsets(), witness.candidate_index())?;
+  let (source_part, source_index) = samples_a.part_and_index(witness.origin_index())?;
+  let (target_part, target_index) = samples_b.part_and_index(witness.candidate_index())?;
 
   let source_coord = samples_a.samples()[witness.origin_index()];
   let target_coord = samples_b.samples()[witness.candidate_index()];
@@ -280,18 +280,6 @@ fn signed_area(vertices: &[Point]) -> f64 {
     sum += x1 * y2 - x2 * y1;
   }
   sum
-}
-
-fn map_flat_index(offsets: &[usize], flat_index: usize) -> Result<(usize, usize), GeodistError> {
-  for window in offsets.windows(2).enumerate() {
-    let part = window.0;
-    let start = window.1[0];
-    let end = window.1[1];
-    if flat_index < end {
-      return Ok((part, flat_index - start));
-    }
-  }
-  Err(GeodistError::InvalidDistance(flat_index as f64))
 }
 
 #[cfg(test)]
