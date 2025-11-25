@@ -9,6 +9,7 @@
 ## Build, Test, and Development Commands
 
 - Python setup: `cd pygeodist && uv sync --all-extras` (installs deps into uv-managed venv).
+- Python environment: run all Python commands via `uv` (e.g., `uv run ...`, `uv pip ...`) so the managed virtual environment is always active and consistent.
 - Python lint/format/typecheck: `cd pygeodist && make lint` (codespell, ruff check+format, mypy).
 - Python tests: `cd pygeodist && make test` (pytest over `src` and `tests`).
 - Python build: `cd pygeodist && make build` (wheel + sdist).
