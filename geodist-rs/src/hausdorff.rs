@@ -6,6 +6,7 @@ use rstar::{AABB, PointDistance, RTree, RTreeObject};
 
 use crate::algorithms::{GeodesicAlgorithm, Spherical};
 use crate::distance::{EcefPoint, geodetic_to_ecef};
+use crate::polyline::{DensificationOptions, FlattenedPolyline, densify_multiline};
 use crate::{BoundingBox, Distance, Ellipsoid, GeodistError, Point, Point3D};
 
 // Keep the O(n*m) fallback for small collections where index build overhead
@@ -84,6 +85,83 @@ impl HausdorffWitness {
       a_to_b,
       b_to_a,
     })
+  }
+}
+
+/// Directed Hausdorff witness across densified polylines.
+///
+/// Part/index fields reference the densified sample order within the supplied
+/// MultiLineString inputs.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PolylineDirectedWitness {
+  distance: Distance,
+  source_part: usize,
+  source_index: usize,
+  target_part: usize,
+  target_index: usize,
+  source_coord: Point,
+  target_coord: Point,
+}
+
+impl PolylineDirectedWitness {
+  /// Directed Hausdorff distance in meters.
+  pub const fn distance(&self) -> Distance {
+    self.distance
+  }
+
+  /// Zero-based part index for the origin polyline.
+  pub const fn source_part(&self) -> usize {
+    self.source_part
+  }
+
+  /// Sample index within the origin part after densification.
+  pub const fn source_index(&self) -> usize {
+    self.source_index
+  }
+
+  /// Zero-based part index for the candidate polyline.
+  pub const fn target_part(&self) -> usize {
+    self.target_part
+  }
+
+  /// Sample index within the candidate part after densification.
+  pub const fn target_index(&self) -> usize {
+    self.target_index
+  }
+
+  /// Coordinate of the realizing origin sample.
+  pub const fn source_coord(&self) -> Point {
+    self.source_coord
+  }
+
+  /// Coordinate of the realizing candidate sample.
+  pub const fn target_coord(&self) -> Point {
+    self.target_coord
+  }
+}
+
+/// Symmetric Hausdorff witness over densified polylines.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PolylineHausdorffWitness {
+  distance: Distance,
+  a_to_b: PolylineDirectedWitness,
+  b_to_a: PolylineDirectedWitness,
+}
+
+impl PolylineHausdorffWitness {
+  /// Maximum distance across both directed evaluations in meters.
+  pub const fn distance(&self) -> Distance {
+    self.distance
+  }
+
+  /// Directed witness from the first argument to the second.
+  pub const fn a_to_b(&self) -> PolylineDirectedWitness {
+    self.a_to_b
+  }
+
+  /// Directed witness from the second argument back to the first.
+  pub const fn b_to_a(&self) -> PolylineDirectedWitness {
+    self.b_to_a
   }
 }
 
@@ -244,6 +322,53 @@ pub fn hausdorff_3d_on_ellipsoid(
   HausdorffWitness::new(forward, reverse)
 }
 
+/// Directed Hausdorff distance between densified polylines.
+///
+/// Accepts MultiLineString inputs (`Vec<Vec<Point>>`), densifies them using
+/// `options`, and computes the directed Hausdorff witness between the emitted
+/// samples.
+pub fn hausdorff_directed_polyline(
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  hausdorff_directed_polyline_with(&Spherical::default(), a, b, options)
+}
+
+/// Directed Hausdorff distance between densified polylines using a custom
+/// geodesic algorithm.
+pub fn hausdorff_directed_polyline_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  hausdorff_directed_polyline_internal(algorithm, a, b, options, None)
+}
+
+/// Symmetric Hausdorff distance between densified polylines.
+///
+/// Executes directed evaluation in both directions with the default spherical
+/// geodesic and returns the dominant witness plus both legs.
+pub fn hausdorff_polyline(
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  hausdorff_polyline_with(&Spherical::default(), a, b, options)
+}
+
+/// Symmetric Hausdorff distance between densified polylines using a custom
+/// geodesic algorithm.
+pub fn hausdorff_polyline_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  hausdorff_polyline_internal(algorithm, a, b, options, None)
+}
+
 /// Directed Hausdorff distance after clipping both sets by a bounding box.
 ///
 /// Points outside `bounding_box` are discarded prior to the directed distance
@@ -323,6 +448,52 @@ pub fn hausdorff_clipped_with<A: GeodesicAlgorithm>(
   validate_positioned_points(&filtered_b)?;
 
   hausdorff_positioned(algorithm, &filtered_a, &filtered_b)
+}
+
+/// Directed Hausdorff distance between densified polylines after bounding box
+/// clipping.
+pub fn hausdorff_directed_polyline_clipped(
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: BoundingBox,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  hausdorff_directed_polyline_clipped_with(&Spherical::default(), a, b, options, bounding_box)
+}
+
+/// Directed polyline Hausdorff distance with custom geodesic algorithm after
+/// bounding box clipping.
+pub fn hausdorff_directed_polyline_clipped_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: BoundingBox,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  hausdorff_directed_polyline_internal(algorithm, a, b, options, Some(bounding_box))
+}
+
+/// Symmetric Hausdorff distance between densified polylines after clipping to
+/// a bounding box.
+pub fn hausdorff_polyline_clipped(
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: BoundingBox,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  hausdorff_polyline_clipped_with(&Spherical::default(), a, b, options, bounding_box)
+}
+
+/// Symmetric polyline Hausdorff distance with custom geodesic algorithm and
+/// bounding box clipping.
+pub fn hausdorff_polyline_clipped_with<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: BoundingBox,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  hausdorff_polyline_internal(algorithm, a, b, options, Some(bounding_box))
 }
 
 /// Directed 3D Hausdorff distance after clipping points to a bounding box.
@@ -417,6 +588,30 @@ pub fn hausdorff_clipped_3d_on_ellipsoid(
   HausdorffWitness::new(forward, reverse)
 }
 
+fn hausdorff_directed_polyline_internal<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: Option<BoundingBox>,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  let samples_a = densify_and_clip(a, options, bounding_box.as_ref())?;
+  let samples_b = densify_and_clip(b, options, bounding_box.as_ref())?;
+  hausdorff_directed_polyline_from_samples(algorithm, &samples_a, &samples_b)
+}
+
+fn hausdorff_polyline_internal<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &[Vec<Point>],
+  b: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: Option<BoundingBox>,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  let samples_a = densify_and_clip(a, options, bounding_box.as_ref())?;
+  let samples_b = densify_and_clip(b, options, bounding_box.as_ref())?;
+  hausdorff_polyline_from_samples(algorithm, &samples_a, &samples_b)
+}
+
 const fn ensure_non_empty<T>(points: &[T]) -> Result<(), GeodistError> {
   if points.is_empty() {
     return Err(GeodistError::EmptyPointSet);
@@ -490,6 +685,19 @@ fn filter_points_3d(points: &[Point3D], bounding_box: &BoundingBox) -> Vec<Posit
     .collect()
 }
 
+fn densify_and_clip(
+  parts: &[Vec<Point>],
+  options: DensificationOptions,
+  bounding_box: Option<&BoundingBox>,
+) -> Result<FlattenedPolyline, GeodistError> {
+  let densified = densify_multiline(parts, options)?;
+
+  match bounding_box {
+    Some(bbox) => densified.clip(bbox),
+    None => Ok(densified),
+  }
+}
+
 fn to_ecef_points(
   points: &[Positioned<Point3D>],
   ellipsoid: &Ellipsoid,
@@ -505,6 +713,43 @@ fn to_ecef_points(
     .collect()
 }
 
+fn hausdorff_directed_polyline_from_samples<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  origins: &FlattenedPolyline,
+  candidates: &FlattenedPolyline,
+) -> Result<PolylineDirectedWitness, GeodistError> {
+  let witness = hausdorff_directed_with(algorithm, origins.samples(), candidates.samples())?;
+  let (source_part, source_index) = origins.part_and_index(witness.origin_index())?;
+  let (target_part, target_index) = candidates.part_and_index(witness.candidate_index())?;
+
+  Ok(PolylineDirectedWitness {
+    distance: witness.distance(),
+    source_part,
+    source_index,
+    target_part,
+    target_index,
+    source_coord: origins.samples()[witness.origin_index()],
+    target_coord: candidates.samples()[witness.candidate_index()],
+  })
+}
+
+fn hausdorff_polyline_from_samples<A: GeodesicAlgorithm>(
+  algorithm: &A,
+  a: &FlattenedPolyline,
+  b: &FlattenedPolyline,
+) -> Result<PolylineHausdorffWitness, GeodistError> {
+  let forward = hausdorff_directed_polyline_from_samples(algorithm, a, b)?;
+  let reverse = hausdorff_directed_polyline_from_samples(algorithm, b, a)?;
+  let meters = forward.distance().meters().max(reverse.distance().meters());
+  let distance = Distance::from_meters(meters)?;
+
+  Ok(PolylineHausdorffWitness {
+    distance,
+    a_to_b: forward,
+    b_to_a: reverse,
+  })
+}
+
 fn choose_strategy(a_len: usize, b_len: usize) -> HausdorffStrategy {
   if should_use_naive(a_len, b_len) {
     HausdorffStrategy::Naive
@@ -517,6 +762,21 @@ fn should_use_naive(a_len: usize, b_len: usize) -> bool {
   let min_size = a_len.min(b_len);
   let cross_product = a_len.saturating_mul(b_len);
   min_size < MIN_INDEX_CANDIDATE_SIZE || cross_product <= MAX_NAIVE_CROSS_PRODUCT
+}
+
+fn prefer_candidate(current: &Option<DirectedHausdorffMeters>, witness: &DirectedHausdorffMeters) -> bool {
+  match current {
+    None => true,
+    Some(existing) => {
+      witness.meters < existing.meters
+        || ((witness.meters - existing.meters).abs() <= f64::EPSILON
+          && witness.candidate_index < existing.candidate_index)
+    }
+  }
+}
+
+fn should_break_search(current: &DirectedHausdorffMeters, candidate_distance: f64) -> bool {
+  candidate_distance - current.meters > f64::EPSILON
 }
 
 fn hausdorff_directed_positioned_with<A: GeodesicAlgorithm>(
@@ -603,18 +863,31 @@ fn hausdorff_directed_indexed<A: GeodesicAlgorithm>(
 
   for origin in origins {
     let query = [origin.point.lon, origin.point.lat];
-    let nearest = index
-      .nearest_neighbor(&query)
-      .expect("candidate set validated as non-empty");
-    let meters = algorithm.geodesic_distance(origin.point, nearest.point)?.meters();
-    let witness = DirectedHausdorffMeters {
-      meters,
-      origin_index: origin.index,
-      candidate_index: nearest.source_index,
-    };
+    let mut nearest: Option<DirectedHausdorffMeters> = None;
 
-    if best.is_none_or(|current| witness.meters > current.meters) {
-      best = Some(witness);
+    for candidate in index.nearest_neighbor_iter(&query) {
+      let meters = algorithm.geodesic_distance(origin.point, candidate.point)?.meters();
+      let witness = DirectedHausdorffMeters {
+        meters,
+        origin_index: origin.index,
+        candidate_index: candidate.source_index,
+      };
+
+      if prefer_candidate(&nearest, &witness) {
+        nearest = Some(witness);
+      }
+
+      if let Some(current) = nearest
+        && should_break_search(&current, meters)
+      {
+        break;
+      }
+    }
+
+    let origin_witness = nearest.expect("candidate set validated as non-empty");
+
+    if best.is_none_or(|current| origin_witness.meters > current.meters) {
+      best = Some(origin_witness);
     }
   }
 
@@ -668,18 +941,31 @@ fn hausdorff_directed_3d_indexed(
 
   for origin in origins {
     let query = [origin.point.x, origin.point.y, origin.point.z];
-    let nearest = index
-      .nearest_neighbor(&query)
-      .expect("candidate set validated as non-empty");
-    let meters = origin.point.distance_to(nearest.point);
-    let witness = DirectedHausdorffMeters {
-      meters,
-      origin_index: origin.index,
-      candidate_index: nearest.source_index,
-    };
+    let mut nearest: Option<DirectedHausdorffMeters> = None;
 
-    if best.is_none_or(|current| witness.meters > current.meters) {
-      best = Some(witness);
+    for candidate in index.nearest_neighbor_iter(&query) {
+      let meters = origin.point.distance_to(candidate.point);
+      let witness = DirectedHausdorffMeters {
+        meters,
+        origin_index: origin.index,
+        candidate_index: candidate.source_index,
+      };
+
+      if prefer_candidate(&nearest, &witness) {
+        nearest = Some(witness);
+      }
+
+      if let Some(current) = nearest
+        && should_break_search(&current, meters)
+      {
+        break;
+      }
+    }
+
+    let origin_witness = nearest.expect("candidate set validated as non-empty");
+
+    if best.is_none_or(|current| origin_witness.meters > current.meters) {
+      best = Some(origin_witness);
     }
   }
 
@@ -955,5 +1241,60 @@ mod tests {
     assert_eq!(witness.origin_index(), 0);
     assert_eq!(witness.candidate_index(), 0);
     assert!((witness.distance().meters() - 100.0).abs() < 1e-9);
+  }
+
+  #[test]
+  fn indexed_search_breaks_ties_by_candidate_order() {
+    let origins: Vec<Point> = (0..35).map(|_| Point::new(0.0, 0.0).unwrap()).collect();
+    let mut candidates = vec![Point::new(0.0, 1.0).unwrap(), Point::new(0.0, -1.0).unwrap()];
+    candidates.extend(
+      (0..198)
+        .map(|i| Point::new(10.0, i as f64 * 0.1).unwrap())
+        .collect::<Vec<Point>>(),
+    );
+
+    let witness = hausdorff_directed(&origins, &candidates).unwrap();
+    assert_eq!(witness.candidate_index(), 0);
+    assert_eq!(witness.origin_index(), 0);
+  }
+
+  #[test]
+  fn polyline_directed_maps_parts_and_indices() {
+    let options = DensificationOptions {
+      max_segment_length_m: Some(5_000_000.0),
+      max_segment_angle_deg: None,
+      sample_cap: 100,
+    };
+
+    let a = vec![
+      vec![Point::new(0.0, 0.0).unwrap(), Point::new(0.0, 10.0).unwrap()],
+      vec![Point::new(5.0, 0.0).unwrap(), Point::new(5.0, 10.0).unwrap()],
+    ];
+    let b = vec![vec![Point::new(0.0, 0.0).unwrap(), Point::new(0.0, 10.0).unwrap()]];
+
+    let witness = hausdorff_directed_polyline(&a, &b, options).unwrap();
+
+    assert_eq!(witness.source_part(), 1);
+    assert_eq!(witness.source_index(), 0);
+    assert_eq!(witness.target_part(), 0);
+    assert_eq!(witness.target_index(), 0);
+    assert_eq!(witness.source_coord(), Point::new(5.0, 0.0).unwrap());
+    assert_eq!(witness.target_coord(), Point::new(0.0, 0.0).unwrap());
+  }
+
+  #[test]
+  fn polyline_clipped_errors_when_no_samples_survive() {
+    let options = DensificationOptions::default();
+    let a = vec![vec![Point::new(10.0, 10.0).unwrap(), Point::new(10.0, 10.5).unwrap()]];
+    let bbox = BoundingBox::new(-1.0, 1.0, -1.0, 1.0).unwrap();
+
+    let result = hausdorff_polyline_clipped(&a, &a, options, bbox);
+    assert!(matches!(result, Err(GeodistError::EmptyPointSet)));
+  }
+
+  #[test]
+  fn strategy_cutover_respects_cross_product_threshold() {
+    assert!(should_use_naive(32, 125));
+    assert!(!should_use_naive(32, 126));
   }
 }

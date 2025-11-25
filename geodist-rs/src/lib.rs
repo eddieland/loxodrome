@@ -54,10 +54,12 @@ pub use distance::{
   geodesic_with_bearings_on_ellipsoid, geodesic_with_bearings_on_radius,
 };
 pub use hausdorff::{
-  HausdorffDirectedWitness, HausdorffWitness, hausdorff, hausdorff_3d, hausdorff_3d_on_ellipsoid, hausdorff_clipped,
-  hausdorff_clipped_3d, hausdorff_clipped_3d_on_ellipsoid, hausdorff_directed, hausdorff_directed_3d,
-  hausdorff_directed_3d_on_ellipsoid, hausdorff_directed_clipped, hausdorff_directed_clipped_3d,
-  hausdorff_directed_clipped_3d_on_ellipsoid,
+  HausdorffDirectedWitness, HausdorffWitness, PolylineDirectedWitness, PolylineHausdorffWitness, hausdorff,
+  hausdorff_3d, hausdorff_3d_on_ellipsoid, hausdorff_clipped, hausdorff_clipped_3d, hausdorff_clipped_3d_on_ellipsoid,
+  hausdorff_directed, hausdorff_directed_3d, hausdorff_directed_3d_on_ellipsoid, hausdorff_directed_clipped,
+  hausdorff_directed_clipped_3d, hausdorff_directed_clipped_3d_on_ellipsoid, hausdorff_directed_polyline,
+  hausdorff_directed_polyline_clipped, hausdorff_directed_polyline_clipped_with, hausdorff_directed_polyline_with,
+  hausdorff_polyline, hausdorff_polyline_clipped, hausdorff_polyline_clipped_with, hausdorff_polyline_with,
 };
 pub use polygon::{
   BoundaryDirectedWitness, BoundaryHausdorffWitness, Polygon, hausdorff_boundary, hausdorff_boundary_directed,
