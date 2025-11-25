@@ -23,8 +23,9 @@ impl Polygon {
   /// - [`GeodistError::DegeneratePolyline`] when a ring is too short or not
   ///   closed.
   /// - [`GeodistError::InvalidVertex`] when coordinates are out of bounds.
-  /// - [`GeodistError::InvalidBoundingBox`] when orientation is wrong or a hole
-  ///   lies outside the exterior ring.
+  /// - [`GeodistError::InvalidRingOrientation`] when orientation is wrong.
+  /// - [`GeodistError::InvalidBoundingBox`] when a hole lies outside the
+  ///   exterior ring.
   pub fn new(exterior: Vec<Point>, holes: Vec<Vec<Point>>) -> Result<Self, GeodistError> {
     let exterior = normalize_ring(exterior, RingOrientation::CounterClockwise, None)?;
     let mut normalized_holes = Vec::with_capacity(holes.len());
@@ -175,7 +176,7 @@ fn normalize_ring(
   }
 
   ensure_closed(&deduped, part_index)?;
-  ensure_orientation(&deduped, expected_orientation)?;
+  ensure_orientation(&deduped, expected_orientation, part_index)?;
   Ok(deduped)
 }
 
@@ -219,21 +220,23 @@ fn ensure_closed(vertices: &[Point], part_index: Option<usize>) -> Result<(), Ge
   Ok(())
 }
 
-fn ensure_orientation(vertices: &[Point], expected: RingOrientation) -> Result<(), GeodistError> {
+fn ensure_orientation(
+  vertices: &[Point],
+  expected: RingOrientation,
+  part_index: Option<usize>,
+) -> Result<(), GeodistError> {
   let area2 = signed_area(vertices);
   let is_ccw = area2 > 0.0;
   match expected {
-    RingOrientation::CounterClockwise if !is_ccw => Err(GeodistError::InvalidBoundingBox {
-      min_lat: 0.0,
-      max_lat: 0.0,
-      min_lon: 0.0,
-      max_lon: 0.0,
+    RingOrientation::CounterClockwise if !is_ccw => Err(GeodistError::InvalidRingOrientation {
+      part_index,
+      expected: RingOrientation::CounterClockwise,
+      got: RingOrientation::Clockwise,
     }),
-    RingOrientation::Clockwise if is_ccw => Err(GeodistError::InvalidBoundingBox {
-      min_lat: 0.0,
-      max_lat: 0.0,
-      min_lon: 0.0,
-      max_lon: 0.0,
+    RingOrientation::Clockwise if is_ccw => Err(GeodistError::InvalidRingOrientation {
+      part_index,
+      expected: RingOrientation::Clockwise,
+      got: RingOrientation::CounterClockwise,
     }),
     _ => Ok(()),
   }
@@ -327,7 +330,7 @@ mod tests {
   fn rejects_wrong_orientation() {
     let exterior = cw_square();
     let result = Polygon::new(exterior, vec![]);
-    assert!(matches!(result, Err(GeodistError::InvalidBoundingBox { .. })));
+    assert!(matches!(result, Err(GeodistError::InvalidRingOrientation { .. })));
   }
 
   #[test]
