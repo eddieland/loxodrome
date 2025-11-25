@@ -425,6 +425,7 @@ fn map_geodist_error(err: types::GeodistError) -> PyErr {
     types::GeodistError::InvalidRadius(_) => InvalidRadiusError::new_err(message),
     types::GeodistError::InvalidEllipsoid { .. } => InvalidEllipsoidError::new_err(message),
     types::GeodistError::InvalidBoundingBox { .. } => InvalidBoundingBoxError::new_err(message),
+    types::GeodistError::InvalidRingOrientation { .. } => InvalidGeometryError::new_err(message),
     types::GeodistError::EmptyPointSet => EmptyPointSetError::new_err(message),
     types::GeodistError::MissingDensificationKnob
     | types::GeodistError::DegeneratePolyline { .. }

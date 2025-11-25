@@ -38,6 +38,13 @@ pub enum GeodistError {
     min_lon: f64,
     max_lon: f64,
   },
+  /// Polygon rings must follow orientation conventions (CCW exterior, CW
+  /// holes).
+  InvalidRingOrientation {
+    part_index: Option<usize>,
+    expected: RingOrientation,
+    got: RingOrientation,
+  },
   /// Point sets must be non-empty for Hausdorff distance.
   EmptyPointSet,
   /// Polyline inputs must provide at least one densification knob.
@@ -93,6 +100,20 @@ impl fmt::Display for GeodistError {
         f,
         "invalid bounding box [{min_lat}, {max_lat}] x [{min_lon}, {max_lon}]; expected finite degrees with min_lat <= max_lat and longitudes in [{MIN_LON_DEGREES}, {MAX_LON_DEGREES}]"
       ),
+      Self::InvalidRingOrientation {
+        part_index,
+        expected,
+        got,
+      } => {
+        let ring_label = match part_index {
+          Some(index) => format!("ring {index}"),
+          None => "exterior ring".to_string(),
+        };
+        write!(
+          f,
+          "{ring_label} has wrong orientation; expected {expected} but got {got}"
+        )
+      }
       Self::EmptyPointSet => write!(f, "point sets must be non-empty"),
       Self::MissingDensificationKnob => write!(
         f,
@@ -143,6 +164,15 @@ impl fmt::Display for GeodistError {
 pub enum RingOrientation {
   Clockwise,
   CounterClockwise,
+}
+
+impl fmt::Display for RingOrientation {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Self::Clockwise => write!(f, "clockwise"),
+      Self::CounterClockwise => write!(f, "counterclockwise"),
+    }
+  }
 }
 
 impl std::error::Error for GeodistError {}
