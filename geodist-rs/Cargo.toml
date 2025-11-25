@@ -18,3 +18,8 @@ rstar = "0.12"
 name = "distance"
 harness = false
 required-features = ["bench"]
+
+[[bench]]
+name = "densification"
+harness = false
+required-features = ["bench"]
