@@ -78,3 +78,43 @@ def test_polyline_hausdorff_clipped_smoke() -> None:
     assert clipped.a_to_b.source_part == 0
     assert clipped.b_to_a.target_part == 0
     assert clipped.distance_m >= clipped.a_to_b.distance_m
+
+
+def test_polyline_chamfer_mean_smoke() -> None:
+    line_a = _geodist_rs.LineString([(0.0, 0.0), (0.0, 1.0)])
+    line_b = _geodist_rs.LineString([(0.0, 0.0), (0.0, 2.0)])
+    options = _geodist_rs.DensificationOptions(
+        max_segment_length_m=1_000_000.0,
+        max_segment_angle_deg=None,
+        sample_cap=1000,
+    )
+
+    chamfer = _geodist_rs.chamfer_polyline([line_a], [line_b], reduction="mean", options=options)
+    assert isinstance(chamfer, _geodist_rs.ChamferResult)
+    assert chamfer.a_to_b.witness is None
+    assert chamfer.b_to_a.witness is None
+    assert chamfer.distance_m >= 0.0
+
+
+def test_polyline_chamfer_max_emits_witness() -> None:
+    line_a = _geodist_rs.LineString([(0.0, 0.0), (0.0, 1.0), (0.0, 2.0)])
+    line_b = _geodist_rs.LineString([(0.0, 0.0), (0.0, 0.2)])
+    options = _geodist_rs.DensificationOptions(
+        max_segment_length_m=1_000_000.0,
+        max_segment_angle_deg=None,
+        sample_cap=1000,
+    )
+
+    directed = _geodist_rs.chamfer_directed_polyline([line_a], [line_b], reduction="max", options=options)
+    assert isinstance(directed.witness, _geodist_rs.PolylineDirectedWitness)
+    assert directed.distance_m == directed.witness.distance_m
+    assert directed.witness.source_index >= directed.witness.target_index
+
+
+def test_polyline_chamfer_clipped_errors() -> None:
+    line_a = _geodist_rs.LineString([(10.0, 0.0), (10.0, 1.0)])
+    line_b = _geodist_rs.LineString([(11.0, 0.0), (11.0, 1.0)])
+    bbox = _geodist_rs.BoundingBox(-1.0, 1.0, -1.0, 1.0)
+
+    with pytest.raises(_geodist_rs.EmptyPointSetError):
+        _geodist_rs.chamfer_polyline_clipped([line_a], [line_b], bbox, reduction="mean")

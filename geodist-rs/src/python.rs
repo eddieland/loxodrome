@@ -17,7 +17,9 @@ use pyo3::types::PyModule;
 use pyo3::{PyErr, create_exception, wrap_pyfunction};
 
 use crate::constants::{EARTH_RADIUS_METERS, MAX_LAT_DEGREES, MAX_LON_DEGREES, MIN_LAT_DEGREES, MIN_LON_DEGREES};
-use crate::{distance, hausdorff as hausdorff_kernel, polygon as polygon_kernel, polyline, types};
+use crate::{
+  chamfer as chamfer_kernel, distance, hausdorff as hausdorff_kernel, polygon as polygon_kernel, polyline, types,
+};
 
 type RingTuple = Vec<(f64, f64)>;
 
@@ -210,6 +212,71 @@ impl PolylineHausdorffWitness {
       dist,
       format_leg(&self.a_to_b),
       format_leg(&self.b_to_a)
+    )
+  }
+}
+
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct ChamferDirectedResult {
+  #[pyo3(get)]
+  distance_m: f64,
+  #[pyo3(get)]
+  witness: Option<PolylineDirectedWitness>,
+}
+
+impl From<chamfer_kernel::ChamferDirectedResult> for ChamferDirectedResult {
+  fn from(value: chamfer_kernel::ChamferDirectedResult) -> Self {
+    Self {
+      distance_m: value.distance().meters(),
+      witness: value.witness().map(PolylineDirectedWitness::from),
+    }
+  }
+}
+
+#[pymethods]
+impl ChamferDirectedResult {
+  fn __repr__(&self) -> String {
+    match &self.witness {
+      Some(witness) => format!(
+        "ChamferDirectedResult(distance_m={}, witness={})",
+        self.distance_m,
+        witness.__repr__()
+      ),
+      None => format!("ChamferDirectedResult(distance_m={}, witness=None)", self.distance_m),
+    }
+  }
+}
+
+#[pyclass(frozen)]
+#[derive(Debug, Clone)]
+pub struct ChamferResult {
+  #[pyo3(get)]
+  distance_m: f64,
+  #[pyo3(get)]
+  a_to_b: ChamferDirectedResult,
+  #[pyo3(get)]
+  b_to_a: ChamferDirectedResult,
+}
+
+impl From<chamfer_kernel::ChamferResult> for ChamferResult {
+  fn from(value: chamfer_kernel::ChamferResult) -> Self {
+    Self {
+      distance_m: value.distance().meters(),
+      a_to_b: value.a_to_b().into(),
+      b_to_a: value.b_to_a().into(),
+    }
+  }
+}
+
+#[pymethods]
+impl ChamferResult {
+  fn __repr__(&self) -> String {
+    format!(
+      "ChamferResult(distance_m={}, a_to_b={}, b_to_a={})",
+      self.distance_m,
+      self.a_to_b.__repr__(),
+      self.b_to_a.__repr__()
     )
   }
 }
@@ -676,6 +743,17 @@ fn map_boundary_densification_opts(
   map_densification_options_parts(max_segment_length_m, max_segment_angle_deg, sample_cap)
 }
 
+fn map_chamfer_reduction(value: &str) -> PyResult<chamfer_kernel::ChamferReduction> {
+  match value {
+    "mean" => Ok(chamfer_kernel::ChamferReduction::Mean),
+    "sum" => Ok(chamfer_kernel::ChamferReduction::Sum),
+    "max" => Ok(chamfer_kernel::ChamferReduction::Max),
+    other => Err(PyValueError::new_err(format!(
+      "invalid reduction \"{other}\"; expected \"mean\", \"sum\", or \"max\""
+    ))),
+  }
+}
+
 #[pyfunction]
 fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
   let origin = map_to_point(p1)?;
@@ -805,6 +883,42 @@ fn hausdorff_polyline(
 }
 
 #[pyfunction]
+#[pyo3(signature = (a, b, reduction = "mean", options = None))]
+fn chamfer_directed_polyline(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  reduction: &str,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<ChamferDirectedResult> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let densification_options = map_densification_options(options)?;
+  let reduction = map_chamfer_reduction(reduction)?;
+
+  chamfer_kernel::chamfer_directed_polyline(&parts_a, &parts_b, densification_options, reduction)
+    .map(ChamferDirectedResult::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, reduction = "mean", options = None))]
+fn chamfer_polyline(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  reduction: &str,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<ChamferResult> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let densification_options = map_densification_options(options)?;
+  let reduction = map_chamfer_reduction(reduction)?;
+
+  chamfer_kernel::chamfer_polyline(&parts_a, &parts_b, densification_options, reduction)
+    .map(ChamferResult::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
 #[pyo3(signature = (a, b, bounding_box, options = None))]
 fn hausdorff_directed_polyline_clipped(
   a: Vec<Polyline>,
@@ -837,6 +951,46 @@ fn hausdorff_polyline_clipped(
 
   hausdorff_kernel::hausdorff_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
     .map(PolylineHausdorffWitness::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, bounding_box, reduction = "mean", options = None))]
+fn chamfer_directed_polyline_clipped(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  bounding_box: &BoundingBox,
+  reduction: &str,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<ChamferDirectedResult> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let bbox = map_to_bounding_box(bounding_box)?;
+  let densification_options = map_densification_options(options)?;
+  let reduction = map_chamfer_reduction(reduction)?;
+
+  chamfer_kernel::chamfer_directed_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
+    .map(ChamferDirectedResult::from)
+    .map_err(map_geodist_error)
+}
+
+#[pyfunction]
+#[pyo3(signature = (a, b, bounding_box, reduction = "mean", options = None))]
+fn chamfer_polyline_clipped(
+  a: Vec<Polyline>,
+  b: Vec<Polyline>,
+  bounding_box: &BoundingBox,
+  reduction: &str,
+  options: Option<&PyDensificationOptions>,
+) -> PyResult<ChamferResult> {
+  let parts_a = map_to_multiline(&a);
+  let parts_b = map_to_multiline(&b);
+  let bbox = map_to_bounding_box(bounding_box)?;
+  let densification_options = map_densification_options(options)?;
+  let reduction = map_chamfer_reduction(reduction)?;
+
+  chamfer_kernel::chamfer_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
+    .map(ChamferResult::from)
     .map_err(map_geodist_error)
 }
 
@@ -1536,6 +1690,8 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_class::<HausdorffWitness>()?;
   m.add_class::<PolylineDirectedWitness>()?;
   m.add_class::<PolylineHausdorffWitness>()?;
+  m.add_class::<ChamferDirectedResult>()?;
+  m.add_class::<ChamferResult>()?;
   m.add_function(wrap_pyfunction!(geodesic_distance, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_distance_on_ellipsoid, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings, m)?)?;
@@ -1547,12 +1703,16 @@ fn _geodist_rs(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_function(wrap_pyfunction!(hausdorff_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_polyline, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_polyline, m)?)?;
+  m.add_function(wrap_pyfunction!(chamfer_directed_polyline, m)?)?;
+  m.add_function(wrap_pyfunction!(chamfer_polyline, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_clipped_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_clipped_3d, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_directed_polyline_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_polyline_clipped, m)?)?;
+  m.add_function(wrap_pyfunction!(chamfer_directed_polyline_clipped, m)?)?;
+  m.add_function(wrap_pyfunction!(chamfer_polyline_clipped, m)?)?;
   m.add_function(wrap_pyfunction!(hausdorff_polygon_boundary, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_distance_batch, m)?)?;
   m.add_function(wrap_pyfunction!(geodesic_with_bearings_batch, m)?)?;

@@ -138,6 +138,27 @@ impl PolylineDirectedWitness {
   pub const fn target_coord(&self) -> Point {
     self.target_coord
   }
+
+  pub(crate) fn from_indices(
+    origins: &FlattenedPolyline,
+    candidates: &FlattenedPolyline,
+    distance: Distance,
+    origin_index: usize,
+    candidate_index: usize,
+  ) -> Result<Self, GeodistError> {
+    let (source_part, source_index) = origins.part_and_index(origin_index)?;
+    let (target_part, target_index) = candidates.part_and_index(candidate_index)?;
+
+    Ok(Self {
+      distance,
+      source_part,
+      source_index,
+      target_part,
+      target_index,
+      source_coord: origins.samples()[origin_index],
+      target_coord: candidates.samples()[candidate_index],
+    })
+  }
 }
 
 /// Symmetric Hausdorff witness over densified polylines.

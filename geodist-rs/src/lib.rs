@@ -39,6 +39,7 @@
 mod python;
 
 mod algorithms;
+mod chamfer;
 mod constants;
 mod distance;
 mod hausdorff;
@@ -47,6 +48,11 @@ mod polyline;
 mod types;
 
 pub use algorithms::{GeodesicAlgorithm, Geographiclib, Spherical};
+pub use chamfer::{
+  ChamferDirectedResult, ChamferReduction, ChamferResult, chamfer_directed_polyline, chamfer_directed_polyline_clipped,
+  chamfer_directed_polyline_clipped_with, chamfer_directed_polyline_with, chamfer_polyline, chamfer_polyline_clipped,
+  chamfer_polyline_clipped_with, chamfer_polyline_with,
+};
 pub use constants::EARTH_RADIUS_METERS;
 pub use distance::{
   GeodesicSolution, geodesic_distance, geodesic_distance_3d, geodesic_distance_3d_on_ellipsoid,

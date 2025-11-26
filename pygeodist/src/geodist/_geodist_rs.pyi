@@ -4,7 +4,7 @@ Exports stay intentionally small while Rust-backed geometry wrappers are built.
 Keep this stub in sync with `geodist-rs/src/python.rs`.
 """
 
-from typing import Final
+from typing import Final, Literal
 
 EARTH_RADIUS_METERS: Final[float]
 
@@ -112,6 +112,15 @@ class PolylineHausdorffWitness:
     a_to_b: PolylineDirectedWitness
     b_to_a: PolylineDirectedWitness
 
+class ChamferDirectedResult:
+    distance_m: float
+    witness: PolylineDirectedWitness | None
+
+class ChamferResult:
+    distance_m: float
+    a_to_b: ChamferDirectedResult
+    b_to_a: ChamferDirectedResult
+
 class BoundingBox:
     min_lat: float
     max_lat: float
@@ -148,6 +157,18 @@ def hausdorff_polyline(
     b: list[LineString],
     options: DensificationOptions | None = ...,
 ) -> PolylineHausdorffWitness: ...
+def chamfer_directed_polyline(
+    a: list[LineString],
+    b: list[LineString],
+    reduction: Literal["mean", "sum", "max"] = ...,
+    options: DensificationOptions | None = ...,
+) -> ChamferDirectedResult: ...
+def chamfer_polyline(
+    a: list[LineString],
+    b: list[LineString],
+    reduction: Literal["mean", "sum", "max"] = ...,
+    options: DensificationOptions | None = ...,
+) -> ChamferResult: ...
 def hausdorff_directed_3d(a: list[Point3D], b: list[Point3D]) -> HausdorffDirectedWitness: ...
 def hausdorff_3d(a: list[Point3D], b: list[Point3D]) -> HausdorffWitness: ...
 def hausdorff_directed_clipped_3d(
@@ -166,6 +187,20 @@ def hausdorff_polyline_clipped(
     bounding_box: BoundingBox,
     options: DensificationOptions | None = ...,
 ) -> PolylineHausdorffWitness: ...
+def chamfer_directed_polyline_clipped(
+    a: list[LineString],
+    b: list[LineString],
+    bounding_box: BoundingBox,
+    reduction: Literal["mean", "sum", "max"] = ...,
+    options: DensificationOptions | None = ...,
+) -> ChamferDirectedResult: ...
+def chamfer_polyline_clipped(
+    a: list[LineString],
+    b: list[LineString],
+    bounding_box: BoundingBox,
+    reduction: Literal["mean", "sum", "max"] = ...,
+    options: DensificationOptions | None = ...,
+) -> ChamferResult: ...
 def hausdorff_polygon_boundary(
     a: Polygon,
     b: Polygon,
@@ -224,6 +259,8 @@ __all__ = [
     "HausdorffWitness",
     "PolylineDirectedWitness",
     "PolylineHausdorffWitness",
+    "ChamferDirectedResult",
+    "ChamferResult",
     "BoundingBox",
     "geodesic_distance",
     "geodesic_distance_on_ellipsoid",
@@ -236,12 +273,16 @@ __all__ = [
     "hausdorff_clipped",
     "hausdorff_directed_polyline",
     "hausdorff_polyline",
+    "chamfer_directed_polyline",
+    "chamfer_polyline",
     "hausdorff_directed_3d",
     "hausdorff_3d",
     "hausdorff_directed_clipped_3d",
     "hausdorff_clipped_3d",
     "hausdorff_directed_polyline_clipped",
     "hausdorff_polyline_clipped",
+    "chamfer_directed_polyline_clipped",
+    "chamfer_polyline_clipped",
     "hausdorff_polygon_boundary",
     "geodesic_distance_batch",
     "geodesic_with_bearings_batch",
