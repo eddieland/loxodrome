@@ -28,6 +28,30 @@ cd experiments && uv run jupyter notebook notebooks/
 cd experiments && uv run python -m experiments.bench_vectorized --count 100000
 ```
 
+### Visualizations
+
+Generate a PNG showing origin/destination pairs from a JSON file:
+
+```bash
+cd experiments
+uv run python -m experiments.viz routes.example.json --output images/routes.png --theme dusk
+```
+
+Input files expect a top-level `routes` array with coordinates given as `[lat, lon]` or
+`{"lat": ..., "lon": ...}` mappings (see `routes.example.json`); entries are validated
+with Pydantic 2 for clearer errors.
+
+You can also use the helpers directly:
+
+```python
+from experiments.viz import load_routes, render_routes, render_routes_figure
+routes = load_routes("routes.example.json")
+render_routes(routes, output="images/routes.png", theme="paper")
+# Inline in a notebook:
+fig = render_routes_figure(routes, theme="dusk")
+fig
+```
+
 ## Adding Dependencies
 
 Feel free to add arbitrary dependencies here. This workspace is isolated from the

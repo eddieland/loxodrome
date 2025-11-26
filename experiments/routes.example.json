@@ -1,0 +1,19 @@
+{
+  "routes": [
+    {
+      "origin": { "lat": 37.6213, "lon": -122.379 },
+      "destination": { "lat": 40.6413, "lon": -73.7781 },
+      "label": "SFO -> JFK"
+    },
+    {
+      "origin": { "lat": 51.47, "lon": -0.4543 },
+      "destination": { "lat": 25.2532, "lon": 55.3657 },
+      "label": "LHR -> DXB"
+    },
+    {
+      "origin": { "lat": -33.9461, "lon": 151.1772 },
+      "destination": { "lat": 35.5494, "lon": 139.7798 },
+      "label": "SYD -> HND"
+    }
+  ]
+}

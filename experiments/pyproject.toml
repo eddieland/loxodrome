@@ -8,10 +8,12 @@ authors = [
 ]
 requires-python = ">=3.10,<4.0"
 
-# Core dependencies for experimentation - add freely as needed
+# Core dependencies for experimentation
 dependencies = [
-    "pygeodist",
+    "matplotlib>=3.8",
     "numpy>=2,<3",
+    "pydantic>=2.9,<3",
+    "pygeodist",
     "shapely>=2.0,<3.0",
 ]
 
