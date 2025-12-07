@@ -755,77 +755,83 @@ fn map_chamfer_reduction(value: &str) -> PyResult<chamfer_kernel::ChamferReducti
 }
 
 #[pyfunction]
-fn geodesic_distance(p1: &Point, p2: &Point) -> PyResult<f64> {
+fn geodesic_distance(py: Python<'_>, p1: &Point, p2: &Point) -> PyResult<f64> {
   let origin = map_to_point(p1)?;
   let destination = map_to_point(p2)?;
 
-  let distance = map_geodist_result(distance::geodesic_distance(origin, destination))?;
-
-  Ok(distance.meters())
+  py.allow_threads(|| map_geodist_result(distance::geodesic_distance(origin, destination)))
+    .map(|distance| distance.meters())
 }
 
 #[pyfunction]
-fn geodesic_distance_on_ellipsoid(p1: &Point, p2: &Point, ellipsoid: &Ellipsoid) -> PyResult<f64> {
+fn geodesic_distance_on_ellipsoid(py: Python<'_>, p1: &Point, p2: &Point, ellipsoid: &Ellipsoid) -> PyResult<f64> {
   let origin = map_to_point(p1)?;
   let destination = map_to_point(p2)?;
   let ellipsoid = map_to_ellipsoid(ellipsoid)?;
 
-  distance::geodesic_distance_on_ellipsoid(ellipsoid, origin, destination)
+  py.allow_threads(|| distance::geodesic_distance_on_ellipsoid(ellipsoid, origin, destination))
     .map(|distance| distance.meters())
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn geodesic_with_bearings(p1: &Point, p2: &Point) -> PyResult<GeodesicSolution> {
+fn geodesic_with_bearings(py: Python<'_>, p1: &Point, p2: &Point) -> PyResult<GeodesicSolution> {
   let origin = map_to_point(p1)?;
   let destination = map_to_point(p2)?;
-  let solution = map_geodist_result(distance::geodesic_with_bearings(origin, destination))?;
 
-  Ok(solution.into())
+  py.allow_threads(|| map_geodist_result(distance::geodesic_with_bearings(origin, destination)))
+    .map(GeodesicSolution::from)
 }
 
 #[pyfunction]
-fn geodesic_with_bearings_on_ellipsoid(p1: &Point, p2: &Point, ellipsoid: &Ellipsoid) -> PyResult<GeodesicSolution> {
+fn geodesic_with_bearings_on_ellipsoid(
+  py: Python<'_>,
+  p1: &Point,
+  p2: &Point,
+  ellipsoid: &Ellipsoid,
+) -> PyResult<GeodesicSolution> {
   let origin = map_to_point(p1)?;
   let destination = map_to_point(p2)?;
   let ellipsoid = map_to_ellipsoid(ellipsoid)?;
 
-  distance::geodesic_with_bearings_on_ellipsoid(ellipsoid, origin, destination)
+  py.allow_threads(|| distance::geodesic_with_bearings_on_ellipsoid(ellipsoid, origin, destination))
     .map(GeodesicSolution::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn geodesic_distance_3d(p1: &Point3D, p2: &Point3D) -> PyResult<f64> {
+fn geodesic_distance_3d(py: Python<'_>, p1: &Point3D, p2: &Point3D) -> PyResult<f64> {
   let origin = map_to_point3d(p1)?;
   let destination = map_to_point3d(p2)?;
-  distance::geodesic_distance_3d(origin, destination)
+
+  py.allow_threads(|| distance::geodesic_distance_3d(origin, destination))
     .map(|distance| distance.meters())
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff_directed(a: Vec<Point>, b: Vec<Point>) -> PyResult<HausdorffDirectedWitness> {
+fn hausdorff_directed(py: Python<'_>, a: Vec<Point>, b: Vec<Point>) -> PyResult<HausdorffDirectedWitness> {
   let points_a = map_to_points(&a)?;
   let points_b = map_to_points(&b)?;
 
-  hausdorff_kernel::hausdorff_directed(&points_a, &points_b)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_directed(&points_a, &points_b))
     .map(HausdorffDirectedWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff(a: Vec<Point>, b: Vec<Point>) -> PyResult<HausdorffWitness> {
+fn hausdorff(py: Python<'_>, a: Vec<Point>, b: Vec<Point>) -> PyResult<HausdorffWitness> {
   let points_a = map_to_points(&a)?;
   let points_b = map_to_points(&b)?;
 
-  hausdorff_kernel::hausdorff(&points_a, &points_b)
+  py.allow_threads(|| hausdorff_kernel::hausdorff(&points_a, &points_b))
     .map(HausdorffWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
 fn hausdorff_directed_clipped(
+  py: Python<'_>,
   a: Vec<Point>,
   b: Vec<Point>,
   bounding_box: &BoundingBox,
@@ -834,18 +840,23 @@ fn hausdorff_directed_clipped(
   let points_b = map_to_points(&b)?;
   let bbox = map_to_bounding_box(bounding_box)?;
 
-  hausdorff_kernel::hausdorff_directed_clipped(&points_a, &points_b, bbox)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_directed_clipped(&points_a, &points_b, bbox))
     .map(HausdorffDirectedWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff_clipped(a: Vec<Point>, b: Vec<Point>, bounding_box: &BoundingBox) -> PyResult<HausdorffWitness> {
+fn hausdorff_clipped(
+  py: Python<'_>,
+  a: Vec<Point>,
+  b: Vec<Point>,
+  bounding_box: &BoundingBox,
+) -> PyResult<HausdorffWitness> {
   let points_a = map_to_points(&a)?;
   let points_b = map_to_points(&b)?;
   let bbox = map_to_bounding_box(bounding_box)?;
 
-  hausdorff_kernel::hausdorff_clipped(&points_a, &points_b, bbox)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_clipped(&points_a, &points_b, bbox))
     .map(HausdorffWitness::from)
     .map_err(map_geodist_error)
 }
@@ -853,6 +864,7 @@ fn hausdorff_clipped(a: Vec<Point>, b: Vec<Point>, bounding_box: &BoundingBox) -
 #[pyfunction]
 #[pyo3(signature = (a, b, options = None))]
 fn hausdorff_directed_polyline(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   options: Option<&PyDensificationOptions>,
@@ -861,7 +873,7 @@ fn hausdorff_directed_polyline(
   let parts_b = map_to_multiline(&b);
   let densification_options = map_densification_options(options)?;
 
-  hausdorff_kernel::hausdorff_directed_polyline(&parts_a, &parts_b, densification_options)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_directed_polyline(&parts_a, &parts_b, densification_options))
     .map(PolylineDirectedWitness::from)
     .map_err(map_geodist_error)
 }
@@ -869,6 +881,7 @@ fn hausdorff_directed_polyline(
 #[pyfunction]
 #[pyo3(signature = (a, b, options = None))]
 fn hausdorff_polyline(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   options: Option<&PyDensificationOptions>,
@@ -877,7 +890,7 @@ fn hausdorff_polyline(
   let parts_b = map_to_multiline(&b);
   let densification_options = map_densification_options(options)?;
 
-  hausdorff_kernel::hausdorff_polyline(&parts_a, &parts_b, densification_options)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_polyline(&parts_a, &parts_b, densification_options))
     .map(PolylineHausdorffWitness::from)
     .map_err(map_geodist_error)
 }
@@ -885,6 +898,7 @@ fn hausdorff_polyline(
 #[pyfunction]
 #[pyo3(signature = (a, b, reduction = "mean", options = None))]
 fn chamfer_directed_polyline(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   reduction: &str,
@@ -895,7 +909,7 @@ fn chamfer_directed_polyline(
   let densification_options = map_densification_options(options)?;
   let reduction = map_chamfer_reduction(reduction)?;
 
-  chamfer_kernel::chamfer_directed_polyline(&parts_a, &parts_b, densification_options, reduction)
+  py.allow_threads(|| chamfer_kernel::chamfer_directed_polyline(&parts_a, &parts_b, densification_options, reduction))
     .map(ChamferDirectedResult::from)
     .map_err(map_geodist_error)
 }
@@ -903,6 +917,7 @@ fn chamfer_directed_polyline(
 #[pyfunction]
 #[pyo3(signature = (a, b, reduction = "mean", options = None))]
 fn chamfer_polyline(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   reduction: &str,
@@ -913,7 +928,7 @@ fn chamfer_polyline(
   let densification_options = map_densification_options(options)?;
   let reduction = map_chamfer_reduction(reduction)?;
 
-  chamfer_kernel::chamfer_polyline(&parts_a, &parts_b, densification_options, reduction)
+  py.allow_threads(|| chamfer_kernel::chamfer_polyline(&parts_a, &parts_b, densification_options, reduction))
     .map(ChamferResult::from)
     .map_err(map_geodist_error)
 }
@@ -921,6 +936,7 @@ fn chamfer_polyline(
 #[pyfunction]
 #[pyo3(signature = (a, b, bounding_box, options = None))]
 fn hausdorff_directed_polyline_clipped(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   bounding_box: &BoundingBox,
@@ -931,14 +947,17 @@ fn hausdorff_directed_polyline_clipped(
   let bbox = map_to_bounding_box(bounding_box)?;
   let densification_options = map_densification_options(options)?;
 
-  hausdorff_kernel::hausdorff_directed_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
-    .map(PolylineDirectedWitness::from)
-    .map_err(map_geodist_error)
+  py.allow_threads(|| {
+    hausdorff_kernel::hausdorff_directed_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
+  })
+  .map(PolylineDirectedWitness::from)
+  .map_err(map_geodist_error)
 }
 
 #[pyfunction]
 #[pyo3(signature = (a, b, bounding_box, options = None))]
 fn hausdorff_polyline_clipped(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   bounding_box: &BoundingBox,
@@ -949,7 +968,7 @@ fn hausdorff_polyline_clipped(
   let bbox = map_to_bounding_box(bounding_box)?;
   let densification_options = map_densification_options(options)?;
 
-  hausdorff_kernel::hausdorff_polyline_clipped(&parts_a, &parts_b, densification_options, bbox)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_polyline_clipped(&parts_a, &parts_b, densification_options, bbox))
     .map(PolylineHausdorffWitness::from)
     .map_err(map_geodist_error)
 }
@@ -957,6 +976,7 @@ fn hausdorff_polyline_clipped(
 #[pyfunction]
 #[pyo3(signature = (a, b, bounding_box, reduction = "mean", options = None))]
 fn chamfer_directed_polyline_clipped(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   bounding_box: &BoundingBox,
@@ -969,14 +989,17 @@ fn chamfer_directed_polyline_clipped(
   let densification_options = map_densification_options(options)?;
   let reduction = map_chamfer_reduction(reduction)?;
 
-  chamfer_kernel::chamfer_directed_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
-    .map(ChamferDirectedResult::from)
-    .map_err(map_geodist_error)
+  py.allow_threads(|| {
+    chamfer_kernel::chamfer_directed_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
+  })
+  .map(ChamferDirectedResult::from)
+  .map_err(map_geodist_error)
 }
 
 #[pyfunction]
 #[pyo3(signature = (a, b, bounding_box, reduction = "mean", options = None))]
 fn chamfer_polyline_clipped(
+  py: Python<'_>,
   a: Vec<Polyline>,
   b: Vec<Polyline>,
   bounding_box: &BoundingBox,
@@ -989,33 +1012,36 @@ fn chamfer_polyline_clipped(
   let densification_options = map_densification_options(options)?;
   let reduction = map_chamfer_reduction(reduction)?;
 
-  chamfer_kernel::chamfer_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
-    .map(ChamferResult::from)
-    .map_err(map_geodist_error)
+  py.allow_threads(|| {
+    chamfer_kernel::chamfer_polyline_clipped(&parts_a, &parts_b, densification_options, reduction, bbox)
+  })
+  .map(ChamferResult::from)
+  .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff_directed_3d(a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<HausdorffDirectedWitness> {
+fn hausdorff_directed_3d(py: Python<'_>, a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<HausdorffDirectedWitness> {
   let points_a = map_to_points3d(&a)?;
   let points_b = map_to_points3d(&b)?;
 
-  hausdorff_kernel::hausdorff_directed_3d(&points_a, &points_b)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_directed_3d(&points_a, &points_b))
     .map(HausdorffDirectedWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff_3d(a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<HausdorffWitness> {
+fn hausdorff_3d(py: Python<'_>, a: Vec<Point3D>, b: Vec<Point3D>) -> PyResult<HausdorffWitness> {
   let points_a = map_to_points3d(&a)?;
   let points_b = map_to_points3d(&b)?;
 
-  hausdorff_kernel::hausdorff_3d(&points_a, &points_b)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_3d(&points_a, &points_b))
     .map(HausdorffWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
 fn hausdorff_directed_clipped_3d(
+  py: Python<'_>,
   a: Vec<Point3D>,
   b: Vec<Point3D>,
   bounding_box: &BoundingBox,
@@ -1024,24 +1050,30 @@ fn hausdorff_directed_clipped_3d(
   let points_b = map_to_points3d(&b)?;
   let bbox = map_to_bounding_box(bounding_box)?;
 
-  hausdorff_kernel::hausdorff_directed_clipped_3d(&points_a, &points_b, bbox)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_directed_clipped_3d(&points_a, &points_b, bbox))
     .map(HausdorffDirectedWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
-fn hausdorff_clipped_3d(a: Vec<Point3D>, b: Vec<Point3D>, bounding_box: &BoundingBox) -> PyResult<HausdorffWitness> {
+fn hausdorff_clipped_3d(
+  py: Python<'_>,
+  a: Vec<Point3D>,
+  b: Vec<Point3D>,
+  bounding_box: &BoundingBox,
+) -> PyResult<HausdorffWitness> {
   let points_a = map_to_points3d(&a)?;
   let points_b = map_to_points3d(&b)?;
   let bbox = map_to_bounding_box(bounding_box)?;
 
-  hausdorff_kernel::hausdorff_clipped_3d(&points_a, &points_b, bbox)
+  py.allow_threads(|| hausdorff_kernel::hausdorff_clipped_3d(&points_a, &points_b, bbox))
     .map(HausdorffWitness::from)
     .map_err(map_geodist_error)
 }
 
 #[pyfunction]
 fn hausdorff_polygon_boundary(
+  py: Python<'_>,
   a: &Polygon,
   b: &Polygon,
   max_segment_length_m: Option<f64>,
@@ -1049,7 +1081,8 @@ fn hausdorff_polygon_boundary(
   sample_cap: usize,
 ) -> PyResult<f64> {
   let options = map_boundary_densification_opts(max_segment_length_m, max_segment_angle_deg, sample_cap)?;
-  polygon_kernel::hausdorff_boundary(&a.inner, &b.inner, options)
+
+  py.allow_threads(|| polygon_kernel::hausdorff_boundary(&a.inner, &b.inner, options))
     .map(|witness| witness.distance().meters())
     .map_err(map_geodist_error)
 }
@@ -1615,51 +1648,55 @@ fn polygon_area_batch(
   let flattening = 1.0 - (semi_minor / semi_major);
   let geodesic = GeographicGeodesic::new(semi_major, flattening);
 
-  let mut areas = Vec::with_capacity(polygon_offsets.len().saturating_sub(1));
+  let areas = py.allow_threads(|| -> PyResult<Vec<f64>> {
+    let mut areas = Vec::with_capacity(polygon_offsets.len().saturating_sub(1));
 
-  for (polygon_index, window) in polygon_offsets.windows(2).enumerate() {
-    let ring_start = window[0];
-    let ring_end = window[1];
+    for (polygon_index, window) in polygon_offsets.windows(2).enumerate() {
+      let ring_start = window[0];
+      let ring_end = window[1];
 
-    if ring_end < ring_start || ring_end > ring_offsets.len().saturating_sub(1) {
-      return Err(InvalidGeometryError::new_err(format!(
-        "polygon {polygon_index} has invalid ring offsets {ring_start}..{ring_end}"
-      )));
-    }
+      if ring_end < ring_start || ring_end > ring_offsets.len().saturating_sub(1) {
+        return Err(InvalidGeometryError::new_err(format!(
+          "polygon {polygon_index} has invalid ring offsets {ring_start}..{ring_end}"
+        )));
+      }
 
-    if ring_start == ring_end {
-      areas.push(0.0);
-      continue;
-    }
+      if ring_start == ring_end {
+        areas.push(0.0);
+        continue;
+      }
 
-    let exterior_area = compute_ring_area(
-      &geodesic,
-      &coords,
-      ring_offsets[ring_start],
-      ring_offsets[ring_start + 1],
-      polygon_index,
-      ring_start,
-    )?;
-
-    let mut holes_area = 0.0;
-    for ring_index in (ring_start + 1)..ring_end {
-      let ring_area = compute_ring_area(
+      let exterior_area = compute_ring_area(
         &geodesic,
         &coords,
-        ring_offsets[ring_index],
-        ring_offsets[ring_index + 1],
+        ring_offsets[ring_start],
+        ring_offsets[ring_start + 1],
         polygon_index,
-        ring_index,
+        ring_start,
       )?;
-      holes_area += ring_area;
+
+      let mut holes_area = 0.0;
+      for ring_index in (ring_start + 1)..ring_end {
+        let ring_area = compute_ring_area(
+          &geodesic,
+          &coords,
+          ring_offsets[ring_index],
+          ring_offsets[ring_index + 1],
+          polygon_index,
+          ring_index,
+        )?;
+        holes_area += ring_area;
+      }
+
+      let mut net = exterior_area - holes_area;
+      if net < 0.0 {
+        net = 0.0;
+      }
+      areas.push(net);
     }
 
-    let mut net = exterior_area - holes_area;
-    if net < 0.0 {
-      net = 0.0;
-    }
-    areas.push(net);
-  }
+    Ok(areas)
+  })?;
 
   Ok(areas)
 }
