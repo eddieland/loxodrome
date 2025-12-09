@@ -42,6 +42,7 @@ from .ops import (
     hausdorff_directed_clipped_3d,
     hausdorff_polygon_boundary,
 )
+from . import pure
 
 EARTH_RADIUS_METERS: Final[float] = float(_geodist_rs.EARTH_RADIUS_METERS)
 
@@ -80,4 +81,5 @@ __all__ = (
     "hausdorff_directed_clipped",
     "hausdorff_directed_clipped_3d",
     "hausdorff_polygon_boundary",
+    "pure",
 )
