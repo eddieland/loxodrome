@@ -1,4 +1,4 @@
-"""Update geodist manifest versions to a provided MAJOR.MINOR.PATCH string."""
+"""Update loxodrome manifest versions to a provided MAJOR.MINOR.PATCH string."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ def main(version: str) -> int:
     """Update version strings in manifest files.
 
     This will update:
-    1. `geodist-rs/Cargo.toml`
-    2. `pygeodist/pyproject.toml`
+    1. `loxodrome-rs/Cargo.toml`
+    2. `loxodrome/pyproject.toml`
 
     It sets the `version` field in both files to the provided version.
     """
@@ -21,8 +21,8 @@ def main(version: str) -> int:
         return 1
 
     targets = [
-        ("geodist-rs/Cargo.toml", r'(?m)^version = "(.*?)"'),
-        ("pygeodist/pyproject.toml", r'(?m)^version = "(.*?)"'),
+        ("loxodrome-rs/Cargo.toml", r'(?m)^version = "(.*?)"'),
+        ("loxodrome/pyproject.toml", r'(?m)^version = "(.*?)"'),
     ]
 
     for path, pattern in targets:

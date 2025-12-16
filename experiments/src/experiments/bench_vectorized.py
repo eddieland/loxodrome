@@ -7,8 +7,8 @@ import time
 
 import numpy as np
 
-from geodist import ops, vectorized as vz
-from geodist.geometry import Point
+from loxodrome import ops, vectorized as vz
+from loxodrome.geometry import Point
 
 
 def _time_call(fn, *, repeat: int) -> float:

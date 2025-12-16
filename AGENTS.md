@@ -2,26 +2,26 @@
 
 ## Project Structure & Modules
 
-- Root contains Rust crate `geodist-rs` (core kernels), Python package `pygeodist` (bindings and tooling for PyPI), and `experiments` workspace (notebooks, benchmarks, visualizations).
-- Rust: see `geodist-rs/src`; binary entry in `src/main.rs` for now. Cargo config in `Cargo.toml` and toolchain pin in `rust-toolchain.toml`.
-- Python (pygeodist): code lives in `pygeodist/src/geodist`; tests in `pygeodist/tests`; packaging config in `pygeodist/pyproject.toml`. This is the published PyPI package.
+- Root contains Rust crate `loxodrome-rs` (core kernels), Python package `loxodrome` (bindings and tooling for PyPI), and `experiments` workspace (notebooks, benchmarks, visualizations).
+- Rust: see `loxodrome-rs/src`; binary entry in `src/main.rs` for now. Cargo config in `Cargo.toml` and toolchain pin in `rust-toolchain.toml`.
+- Python (loxodrome): code lives in `loxodrome/src/loxodrome`; tests in `loxodrome/tests`; packaging config in `loxodrome/pyproject.toml`. This is the published PyPI package.
 - Python (experiments): notebooks in `experiments/notebooks`; benchmarks and tools in `experiments/src/experiments`; packaging config in `experiments/pyproject.toml`. This workspace is NOT published to PyPI and can have arbitrary dependencies.
 
 ## Build, Test, and Development Commands
 
-- Python setup: `cd pygeodist && uv sync --all-extras` (installs deps into uv-managed venv).
+- Python setup: `cd loxodrome && uv sync --all-extras` (installs deps into uv-managed venv).
 - Python environment: run all Python commands via `uv` (e.g., `uv run ...`, `uv pip ...`) so the managed virtual environment is always active and consistent.
-- Python lint/format/typecheck: `cd pygeodist && make lint` (codespell, ruff check+format, mypy).
-- Python tests: `cd pygeodist && make test` (pytest over `src` and `tests`).
-- Python build: `cd pygeodist && make build` (wheel + sdist).
-- Rust run: `cd geodist-rs && cargo run`.
-- Rust tests (when added): `cd geodist-rs && cargo test`.
+- Python lint/format/typecheck: `cd loxodrome && make lint` (codespell, ruff check+format, mypy).
+- Python tests: `cd loxodrome && make test` (pytest over `src` and `tests`).
+- Python build: `cd loxodrome && make build` (wheel + sdist).
+- Rust run: `cd loxodrome-rs && cargo run`.
+- Rust tests (when added): `cd loxodrome-rs && cargo test`.
 
 ## Coding Style & Naming
 
 - Python: Ruff formatting/linting enforced; follow PEP 8, type-first design (`pyproject.toml` sets `strict = true` for mypy). Use snake_case for functions/vars, PascalCase for classes, module-level constants in SCREAMING_SNAKE_CASE.
 - Module layout: keep Python public API definitions at the top of each `.py` file and place `_private` helpers after them so important entry points stay discoverable.
-- Keep the PyO3 extension stub in sync: update `pygeodist/src/geodist/_geodist_rs.pyi` whenever the Rust-exposed API changes so typings mirror the compiled bindings.
+- Keep the PyO3 extension stub in sync: update `loxodrome/src/loxodrome/_loxodrome_rs.pyi` whenever the Rust-exposed API changes so typings mirror the compiled bindings.
 - Rust: Standard Rustfmt defaults; favor small modules and explicit imports. Use snake_case for fns/vars, CamelCase for types/traits.
 - Geospatial naming: use ISO-backed abbreviations for recurring concepts—`lat`/`lon` for latitude/longitude (ISO 6709) and `_deg` suffix for degree-valued angles (ISO 80000-3); prefer `_rad` when explicitly radians to avoid ambiguity. Keep these abbreviations consistent across code, tests, and docs.
 
@@ -39,8 +39,8 @@
 
 ## Testing Guidelines
 
-- Python: Pytest; place new tests under `pygeodist/tests` and mirror package layout (e.g., `tests/test_geom.py` for `src/geodist/geom.py`). Name tests `test_*` and use descriptive asserts. Add regression tests for bug fixes.
-- Rust: Prefer unit tests co-located with modules and integration tests under `geodist-rs/tests` as functionality grows. Keep deterministic fixtures and avoid heavy external data.
+- Python: Pytest; place new tests under `loxodrome/tests` and mirror package layout (e.g., `tests/test_geom.py` for `src/loxodrome/geom.py`). Name tests `test_*` and use descriptive asserts. Add regression tests for bug fixes.
+- Rust: Prefer unit tests co-located with modules and integration tests under `loxodrome-rs/tests` as functionality grows. Keep deterministic fixtures and avoid heavy external data.
 - Aim for meaningful coverage around geometric kernels and witness-point reporting when implemented.
 
 ## Commit & Pull Request Practices

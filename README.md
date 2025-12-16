@@ -1,8 +1,8 @@
-# geodist
+# loxodrome
 
 **High-performance geometric distance algorithms with Rust kernels and Python bindings.**
 
-`geodist` focuses on transparent distance calculations you can audit and explain
+`loxodrome` focuses on transparent distance calculations you can audit and explain
 rather than treating results as opaque numbers. The Rust crate provides the core
 geodesic kernels; Python bindings will layer ergonomic geometry wrappers once
 the Rust surface settles.
@@ -36,8 +36,8 @@ can be added later if needed; clipping still uses latitude/longitude bounds.
 
 | Component      | What exists today                                   | Path |
 |----------------|-----------------------------------------------------|------|
-| **geodist-rs** | Rust crate with geodesic distance + Hausdorff APIs  | `geodist-rs/` |
-| **pygeodist**  | Python package with PyO3 bindings (published to PyPI) | `pygeodist/` |
+| **loxodrome-rs** | Rust crate with geodesic distance + Hausdorff APIs  | `loxodrome-rs/` |
+| **loxodrome**  | Python package with PyO3 bindings (published to PyPI) | `loxodrome/` |
 | **experiments** | Notebooks, benchmarks, and visualizations (not published) | `experiments/` |
 
 ## What works now
@@ -60,7 +60,7 @@ can be added later if needed; clipping still uses latitude/longitude bounds.
 ## Rust quickstart
 
 ```rust
-use geodist_rs::{HausdorffDirectedWitness, Point, geodesic_distance, geodesic_with_bearings, hausdorff};
+use loxodrome_rs::{HausdorffDirectedWitness, Point, geodesic_distance, geodesic_with_bearings, hausdorff};
 
 let origin = Point::new(40.7128, -74.0060)?;
 let destination = Point::new(51.5074, -0.1278)?;
@@ -85,15 +85,15 @@ confirm the extension loads. Build the extension before exercising the Python
 helpers to ensure the Rust kernels are available.
 
 ```bash
-cd pygeodist
+cd loxodrome
 uv sync --all-extras --dev
 uv run maturin develop  # builds the extension module
-uv run geodist info     # prints whether the extension loaded
+uv run lox info         # prints whether the extension loaded
 uv run pytest           # exercises the stub surface
 ```
 
 ```python
-from geodist import Point, geodesic_with_bearings, hausdorff
+from loxodrome import Point, geodesic_with_bearings, hausdorff
 
 origin = Point(0.0, 0.0)
 east = Point(0.0, 1.0)
@@ -110,10 +110,10 @@ print(witness.distance_m, witness.a_to_b.origin_index, witness.a_to_b.candidate_
 Install the optional extra to enable NumPy-backed batch helpers:
 
 ```bash
-pip install pygeodist[vectorized]
+pip install loxodrome[vectorized]
 ```
 
-Key entry points live under `geodist.vectorized`:
+Key entry points live under `loxodrome.vectorized`:
 
 - Constructors: `points_from_coords`, `points3d_from_coords`, `polylines_from_coords`, and `polygons_from_coords` accept NumPy arrays or Python buffers. Validation is vectorized and reports the failing index.
 - Pairwise operations: `geodesic_distance_batch`, `geodesic_with_bearings_batch`, and `geodesic_distance_to_many` return NumPy arrays when available (lists otherwise).
@@ -123,7 +123,7 @@ Examples:
 
 ```python
 import numpy as np
-from geodist import vectorized as vz
+from loxodrome import vectorized as vz
 
 origins = vz.points_from_coords(np.array([[0.0, 0.0], [0.0, 0.0]]))
 destinations = vz.points_from_coords(np.array([[0.0, 1.0], [1.0, 0.0]]))
@@ -151,15 +151,15 @@ uv run python -m experiments.bench_vectorized --count 100000
 Shapely stays optional; install the extra when you need it:
 
 ```bash
-pip install pygeodist[shapely]
+pip install loxodrome[shapely]
 ```
 
-Converters live in `geodist.ext.shapely` and keep imports guarded so you can
-depend on `geodist` without pulling Shapely everywhere:
+Converters live in `loxodrome.ext.shapely` and keep imports guarded so you can
+depend on `loxodrome` without pulling Shapely everywhere:
 
 ```python
-from geodist import Point
-from geodist.ext.shapely import from_shapely, to_shapely
+from loxodrome import Point
+from loxodrome.ext.shapely import from_shapely, to_shapely
 
 point = Point(12.5, -45.0)
 shapely_point = to_shapely(point)
@@ -201,6 +201,6 @@ stable release. Contributions, suggestions, and issue reports are welcome.
 ## Tooling
 
 - Python uses [uv](https://docs.astral.sh/uv/). Install it via `curl -LsSf https://astral.sh/uv/install.sh | sh` or `brew install uv` on macOS, then provision a toolchain with `uv python install 3.13`.
-- Set up the Python environment with `cd pygeodist && uv sync --all-extras` (or `make install` for the same effect). Run `uv run maturin develop` after Rust changes to rebuild the extension.
-- Common Python shortcuts from `pygeodist/Makefile`: `make lint`, `make test`, `make build`, `make clean`.
-- Rust work happens under `geodist-rs`; use `cargo fmt`, `cargo clippy`, and `cargo nextest run` (or the root `make fmt|lint|test`) while iterating on kernels.
+- Set up the Python environment with `cd loxodrome && uv sync --all-extras` (or `make install` for the same effect). Run `uv run maturin develop` after Rust changes to rebuild the extension.
+- Common Python shortcuts from `loxodrome/Makefile`: `make lint`, `make test`, `make build`, `make clean`.
+- Rust work happens under `loxodrome-rs`; use `cargo fmt`, `cargo clippy`, and `cargo nextest run` (or the root `make fmt|lint|test`) while iterating on kernels.

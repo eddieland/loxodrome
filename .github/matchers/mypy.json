@@ -1,7 +1,7 @@
 {
   "problemMatcher": [
     {
-      "owner": "mypy-geodist",
+      "owner": "mypy-loxodrome",
       "pattern": [
         {
           "regexp": "^(.+):(\\d+):(\\d+): (error|note): (.+)$",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "owner": "mypy-geodist-nocol",
+      "owner": "mypy-loxodrome-nocol",
       "pattern": [
         {
           "regexp": "^(.+):(\\d+): (error|note): (.+)$",

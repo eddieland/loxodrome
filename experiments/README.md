@@ -1,9 +1,9 @@
-# geodist-experiments
+# loxodrome-experiments
 
-Experimentation, benchmarks, notebooks, and visualizations for geodist development.
+Experimentation, benchmarks, notebooks, and visualizations for loxodrome development.
 
 This workspace is intentionally **not published** to PyPI. It holds exploratory code,
-benchmarks, and tools that may eventually be promoted into the main `pygeodist` package.
+benchmarks, and tools that may eventually be promoted into the main `loxodrome` package.
 
 ## Setup
 
@@ -11,7 +11,7 @@ benchmarks, and tools that may eventually be promoted into the main `pygeodist` 
 cd experiments && uv sync --all-extras
 ```
 
-The `pygeodist` package is installed as an editable dependency, so changes to the core
+The `loxodrome` package is installed as an editable dependency, so changes to the core
 library are reflected immediately.
 
 ## Usage

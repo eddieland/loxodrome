@@ -1,9 +1,9 @@
 """Determine the release version for CI workflows.
 
 Behaviors:
-- pull_request: read the Python package version from pygeodist/pyproject.toml
+- pull_request: read the Python package version from loxodrome/pyproject.toml
 - tag push or manual run on a tag: validate tag format vMAJOR.MINOR.PATCH and emit version
-- manual run on a branch: read the Python package version from pygeodist/pyproject.toml
+- manual run on a branch: read the Python package version from loxodrome/pyproject.toml
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def repo_root() -> Path:
 
 
 def version_from_manifest(root: Path) -> str:
-    manifest = root / "pygeodist" / "pyproject.toml"
+    manifest = root / "loxodrome" / "pyproject.toml"
     data = tomllib.loads(manifest.read_text())
     return data["project"]["version"]
 

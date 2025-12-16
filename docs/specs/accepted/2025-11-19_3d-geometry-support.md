@@ -12,7 +12,7 @@
 - Preserve fast 2D hot paths: no per-point branching in inner loops.
 - Inputs are either all 2D or all 3D per call; no mixed-dimension batches.
 - Altitude expressed in meters and finite; lat/lon validation remains unchanged.
-- Keep FFI/PyO3 surfaces consistent with Rust types; update `_geodist_rs.pyi` alongside Rust bindings.
+- Keep FFI/PyO3 surfaces consistent with Rust types; update `_loxodrome_rs.pyi` alongside Rust bindings.
 - Avoid breaking public APIs; new types/flags should be additive and clearly named.
 
 ## Target Capabilities

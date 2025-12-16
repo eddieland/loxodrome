@@ -10,14 +10,14 @@ import pathlib
 
 def main() -> int:
     repo_root = pathlib.Path(__file__).resolve().parents[2]
-    target_dir = repo_root / "pygeodist" / "src" / "geodist"
+    target_dir = repo_root / "loxodrome" / "src" / "loxodrome"
 
     if not target_dir.is_dir():
         print(f"Target directory not found: {target_dir}")
         return 0
 
     removed: list[str] = []
-    for path in target_dir.glob("_geodist_rs.*"):
+    for path in target_dir.glob("_loxodrome_rs.*"):
         if path.suffix.lower() in {".so", ".pyd", ".dylib", ".dll"}:
             path.unlink()
             removed.append(path.name)

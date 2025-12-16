@@ -1,4 +1,4 @@
-"""Image-based visualizations for geodist experiment results."""
+"""Image-based visualizations for loxodrome experiment results."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from geodist import ops
-from geodist.geometry import Point
+from loxodrome import ops
+from loxodrome.geometry import Point
 
 __all__ = ["RouteResult", "load_routes", "render_routes", "render_routes_figure", "main"]
 
@@ -65,7 +65,7 @@ def load_routes(source: str | Path) -> list[RouteResult]:
     The file should contain a top-level object with a ``routes`` array. Each route
     entry must define ``origin`` and ``destination`` coordinates, provided either as
     ``[lat, lon]`` lists or ``{"lat": ..., "lon": ...}`` mappings. ``distance_km`` is
-    optional; missing values are computed with ``geodist.ops.geodesic_distance``.
+    optional; missing values are computed with ``loxodrome.ops.geodesic_distance``.
     """
     raw_text = Path(source).read_text()
     parsed = _RouteCollection.model_validate_json(raw_text)
@@ -85,7 +85,7 @@ def render_routes(
     routes: Sequence[RouteResult],
     *,
     output: str | Path,
-    title: str = "Geodist routes",
+    title: str = "Loxodrome routes",
     dpi: int = 240,
     theme: str = "dusk",
     show_labels: bool = True,
@@ -108,7 +108,7 @@ def render_routes(
 def render_routes_figure(
     routes: Sequence[RouteResult],
     *,
-    title: str = "Geodist routes",
+    title: str = "Loxodrome routes",
     dpi: int = 240,
     theme: str = "dusk",
     show_labels: bool = True,
@@ -183,7 +183,7 @@ def render_routes_figure(
 
 def main(argv: Sequence[str] | None = None) -> None:
     """CLI entry point for rendering a routes JSON file to a PNG."""
-    parser = argparse.ArgumentParser(description="Render geodist results to a pretty PNG.")
+    parser = argparse.ArgumentParser(description="Render loxodrome results to a pretty PNG.")
     parser.add_argument("input", type=Path, help="Path to a JSON file containing a 'routes' array")
     parser.add_argument(
         "--output",
@@ -197,7 +197,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         default="dusk",
         help="Color theme to use for the visualization",
     )
-    parser.add_argument("--title", default="Geodist routes", help="Title to display at the top of the figure")
+    parser.add_argument("--title", default="Loxodrome routes", help="Title to display at the top of the figure")
     parser.add_argument("--dpi", type=int, default=240, help="DPI for the saved image")
     parser.add_argument(
         "--hide-labels",
@@ -230,7 +230,7 @@ def _collect_extents(routes: Iterable[RouteResult]) -> tuple[list[float], list[f
 def _apply_gradient(ax: plt.Axes, lon_min: float, lon_max: float, lat_min: float, lat_max: float, style: dict[str, str]) -> None:
     gradient = np.linspace(0, 1, 256)
     gradient = np.vstack((gradient, gradient))
-    cmap = LinearSegmentedColormap.from_list("geodist-viz-bg", [style["gradient_bottom"], style["gradient_top"]])
+    cmap = LinearSegmentedColormap.from_list("loxodrome-viz-bg", [style["gradient_bottom"], style["gradient_top"]])
     ax.imshow(
         gradient,
         extent=[lon_min, lon_max, lat_min, lat_max],

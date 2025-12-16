@@ -35,7 +35,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | PoC: integrate `geographiclib-rs` via adapter | Add a thin adapter trait around `geographiclib-rs` inverse solver; wire `geodesic_*_on_ellipsoid` + bearings to it; keep spherical path unchanged | Build behind minimal dependency; guarded by tests | ✅ Done |
 | P0 | Reference fixtures + validation | Add authoritative test pairs (GeographicLib tables) incl. antipodal/polar/short-haul; verify meters/bearings match within tolerance | WGS84 fixtures from GeographicLib 2.0 (polar, near-antipodal, short-haul, trans-Atlantic) exercised in Rust + Python tests | ✅ Done |
-| P0 | Expose PoC through PyO3 + Python API | Extend `python.rs`, `_geodist_rs.pyi`, and `ops.py` to surface ellipsoidal variants; keep spherical exports intact | Pytest coverage for new functions and error paths | ✅ Done |
+| P0 | Expose PoC through PyO3 + Python API | Extend `python.rs`, `_loxodrome_rs.pyi`, and `ops.py` to surface ellipsoidal variants; keep spherical exports intact | Pytest coverage for new functions and error paths | ✅ Done |
 | P1 | Bench PoC vs spherical | Bench single + batch calls; record perf delta and accuracy; decide if PoC is acceptable for initial ship | Criterion benches show ~0.63 us ellipsoid vs ~0.038 us spherical single-call; batch (256 pairs) ~136 us ellipsoid vs ~9.4 us spherical | ✅ Done |
 | P1 | Decide fork/vendoring strategy | Based on PoC results + upstream health, choose: keep dep, vendor fork, or build in-tree solver | Keep `geographiclib-rs` dependency; revisit vendoring only if upstream stalls or API drift appears | ✅ Done |
 | P2 | Deprecation messaging | If mean-radius remains default, add doc/docs clarifying approximation and steering to ellipsoid | Non-breaking; doc-level first | ✅ Done |
@@ -45,7 +45,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 
 - **Risk:** Vincenty fails to converge near antipodal points. **Mitigation:** Prefer Karney/GeographicLib formulation or add robust fallback with iteration caps and error surfacing.
 - **Risk:** Performance regression on batch workloads. **Mitigation:** Benchmark early; consider caching constants, vectorization, or hybrid spherical fast-path when errors are below tolerance and caller opts in.
-- **Risk:** API churn across Rust/Python surfaces. **Mitigation:** Add new functions first; deprecate spherical-only approximations via docs, not removals; keep `_geodist_rs.pyi` and Rust PyO3 in sync.
+- **Risk:** API churn across Rust/Python surfaces. **Mitigation:** Add new functions first; deprecate spherical-only approximations via docs, not removals; keep `_loxodrome_rs.pyi` and Rust PyO3 in sync.
 - **Risk:** Reference fixtures mismatch due to unit or ellipsoid discrepancies. **Mitigation:** Pin ellipsoid parameters in tests and cross-check with multiple sources; document provenance alongside fixtures.
 
 ### Decisions

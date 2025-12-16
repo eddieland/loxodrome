@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
-PY_DIR := pygeodist
-RS_DIR := geodist-rs
+PY_DIR := loxodrome
+RS_DIR := loxodrome-rs
 
 ### Makefile
 

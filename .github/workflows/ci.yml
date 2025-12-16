@@ -66,7 +66,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.uv-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('pygeodist/pyproject.toml', 'pygeodist/uv.lock') }}
+          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('loxodrome/pyproject.toml', 'loxodrome/uv.lock') }}
           restore-keys: |
             ${{ runner.os }}-uv-${{ matrix.python-version }}-
 
@@ -78,25 +78,25 @@ jobs:
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "geodist-rs -> target"
+          workspaces: "loxodrome-rs -> target"
 
       - name: Sync Python dependencies
-        working-directory: pygeodist
+        working-directory: loxodrome
         run: uv sync --all-extras --dev
 
       - name: Build Rust extension module
-        working-directory: pygeodist
+        working-directory: loxodrome
         run: uv run maturin develop
 
       - name: Run lint
-        working-directory: pygeodist
+        working-directory: loxodrome
         env:
           RUFF_OUTPUT_FORMAT: github
           RUFF_CONFIG: ruff.toml
         run: make lint
 
       - name: Run tests
-        working-directory: pygeodist
+        working-directory: loxodrome
         env:
           PYTEST_ADDOPTS: "--maxfail=1 --disable-warnings --junitxml=.test-results/pytest-${{ matrix.python-version }}.xml"
         run: |
@@ -107,7 +107,7 @@ jobs:
         if: always()
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: pygeodist/.test-results/pytest-*.xml
+          report_paths: loxodrome/.test-results/pytest-*.xml
           check_name: "pytest (${{ matrix.python-version }})"
           fail_on_failure: false
           annotate_only: true
@@ -129,18 +129,18 @@ jobs:
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "geodist-rs -> target"
+          workspaces: "loxodrome-rs -> target"
 
       - name: Cargo fmt
-        working-directory: geodist-rs
+        working-directory: loxodrome-rs
         run: cargo fmt --all -- --check
 
       - name: Cargo clippy
-        working-directory: geodist-rs
+        working-directory: loxodrome-rs
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Cargo build
-        working-directory: geodist-rs
+        working-directory: loxodrome-rs
         run: cargo build --workspace
 
   benchmark:
@@ -161,18 +161,18 @@ jobs:
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "geodist-rs -> target"
+          workspaces: "loxodrome-rs -> target"
 
       - name: Run benchmarks
-        working-directory: geodist-rs
-        run: cargo bench --package geodist-rs --features bench
+        working-directory: loxodrome-rs
+        run: cargo bench --package loxodrome-rs --features bench
 
       - name: Upload benchmark report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-report
-          path: geodist-rs/target/criterion
+          path: loxodrome-rs/target/criterion
           if-no-files-found: ignore
           retention-days: 7
 
@@ -194,7 +194,7 @@ jobs:
       - name: Cache cargo build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "geodist-rs -> target"
+          workspaces: "loxodrome-rs -> target"
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@v2
@@ -202,7 +202,7 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Collect coverage
-        working-directory: geodist-rs
+        working-directory: loxodrome-rs
         run: cargo llvm-cov --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage artifacts
@@ -211,7 +211,7 @@ jobs:
         with:
           name: rust-coverage
           path: |
-            geodist-rs/lcov.info
-            geodist-rs/target/llvm-cov/html
+            loxodrome-rs/lcov.info
+            loxodrome-rs/target/llvm-cov/html
           if-no-files-found: ignore
           retention-days: 7

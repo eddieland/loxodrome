@@ -13,12 +13,12 @@
 - Favor clarity over micro-optimizations; correctness and determinism are the initial priorities.
 - Keep the public surface small: single entry points for point-to-point, batch distance calculation, and Hausdorff over point sets, returning `Result` for fallible paths.
 - Avoid pinning to a specific ellipsoid implementation yet; start with a sane default (WGS84) and leave room for injectable models later.
-- Design for easy FFI/PyO3 exposure (simple structs/enums, `#[repr(C)]` when needed) so `pygeodist` can bind without churn; keep bindings feature-gated to avoid burdening the core.
+- Design for easy FFI/PyO3 exposure (simple structs/enums, `#[repr(C)]` when needed) so `loxodrome` can bind without churn; keep bindings feature-gated to avoid burdening the core.
 
 ## Target Project Structure (Rust Crate)
 
 ```plaintext
-geodist-rs/
+loxodrome-rs/
 ├── Cargo.toml
 ├── benches/                  # Criterion benches gated behind `bench` feature
 │   └── distance.rs
@@ -54,11 +54,11 @@ geodist-rs/
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Define core types (`Point`, `Distance`, error enum) and input validation | Types live in `geodist-rs/src/types.rs`, re-exported from `lib.rs`; invalid inputs return errors; degrees documented | Keep types FFI-friendly; include doc comments | ✅ Done |
+| P0 | Define core types (`Point`, `Distance`, error enum) and input validation | Types live in `loxodrome-rs/src/types.rs`, re-exported from `lib.rs`; invalid inputs return errors; degrees documented | Keep types FFI-friendly; include doc comments | ✅ Done |
 | P0 | Implement baseline great-circle `geodesic_distance` and targeted unit tests | Function `geodesic_distance(p1, p2)` returns meters; unit tests cover typical and polar/antipodal cases | Use `f64`; deterministic tolerances in tests | ✅ Done |
 | P0 | Implement Hausdorff distance (directed and symmetric) over point slices | Functions `hausdorff(a, b)` and `hausdorff_directed(a, b)` reuse distance kernel; tests cover small sets and edge cases | Empty sets return `GeodistError::EmptyPointSet`; duplicates permitted | ✅ Done |
 | P0 | Add batch helper (`geodesic_distances`) and tests | Accepts slice of point pairs; returns `Vec<f64>` or error | Prefer iterator-based internal impl to share logic | ✅ Done |
-| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `geodist._geodist_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | ✅ Done |
+| P1 | Minimal Python binding surface | Follow `2025-11-19_pyo3-integration-plan.md`: add feature-gated PyO3 module exporting a trivial constant for wheel smoke tests, then expand toward distance/Hausdorff once stable | Keep module named `loxodrome._loxodrome_rs` (or equivalent) to avoid namespace clutter; PyO3 remains optional | ✅ Done |
 | P1 | Benchmark harness stub | Add Criterion (or feature-gated) bench for distance and Hausdorff | Capture baseline numbers for future optimization | ✅ Done |
 | P2 | Pluggable algorithm abstraction | Trait for algorithm strategy; spherical great-circle as default impl; Hausdorff accepts strategy | Enables drop-in higher-accuracy algorithms later | ✅ Done |
 | P1 | Spatial index acceleration | Make `rstar`-backed nearest-neighbor search the default fast path for Hausdorff on large sets; keep a pure O(n*m) fallback for tiny inputs/tests | `rstar` becomes a baseline dependency; document when we fall back to the naive path | ✅ Done |

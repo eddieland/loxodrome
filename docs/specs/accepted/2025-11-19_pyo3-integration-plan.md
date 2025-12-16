@@ -10,15 +10,15 @@
 
 ## Guiding Constraints
 
-- Keep `geodist-rs` as the single source of truth; gate PyO3 behind an optional `python` feature.
-- Publish the Rust extension under the `geodist` namespace (e.g., `geodist._geodist_rs`) without polluting top-level APIs.
+- Keep `loxodrome-rs` as the single source of truth; gate PyO3 behind an optional `python` feature.
+- Publish the Rust extension under the `loxodrome` namespace (e.g., `loxodrome._loxodrome_rs`) without polluting top-level APIs.
 - Use maturin for Python packaging while staying compatible with the existing `uv` workflow and pinned toolchains.
 
 ## Target Capabilities
 
 1. Feature-gated PyO3 module exporting a minimal surface (constant or stub) that builds with and without the `python` feature.
-2. Maturin-backed Python build wiring that produces a wheel from `geodist-rs` via `pygeodist/pyproject.toml`.
-3. Python package re-export that allows `import geodist` to surface the bound constant with a smoke test validating parity.
+2. Maturin-backed Python build wiring that produces a wheel from `loxodrome-rs` via `loxodrome/pyproject.toml`.
+3. Python package re-export that allows `import loxodrome` to surface the bound constant with a smoke test validating parity.
 
 ## Subagent Execution Plan
 
@@ -28,9 +28,9 @@ The following backlog is prioritized for a single subagent (or small group) to i
 
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
-| P0 | Rust bindings shell | Optional `python` feature adds PyO3 and exports `EARTH_RADIUS_METERS` via `geodist._geodist_rs`; `cargo check` passes with and without the feature | Already merged; keep module naming stable for downstream imports | ✅ Done |
-| P0 | Build system wiring | `pygeodist/pyproject.toml` uses maturin with `manifest-path` pointing at `../geodist-rs/Cargo.toml` and enables the `python` feature; Make/uv targets documented | Align with `2025-11-19_rust-mvp-algorithm.md` references | ✅ Done |
-| P1 | Python surface | `geodist/__init__.py` re-exports the bound constant; smoke test asserts import works and value matches Rust | Keep Python namespace minimal and stable | ✅ Done |
+| P0 | Rust bindings shell | Optional `python` feature adds PyO3 and exports `EARTH_RADIUS_METERS` via `loxodrome._loxodrome_rs`; `cargo check` passes with and without the feature | Already merged; keep module naming stable for downstream imports | ✅ Done |
+| P0 | Build system wiring | `loxodrome/pyproject.toml` uses maturin with `manifest-path` pointing at `../loxodrome-rs/Cargo.toml` and enables the `python` feature; Make/uv targets documented | Align with `2025-11-19_rust-mvp-algorithm.md` references | ✅ Done |
+| P1 | Python surface | `loxodrome/__init__.py` re-exports the bound constant; smoke test asserts import works and value matches Rust | Keep Python namespace minimal and stable | ✅ Done |
 | P1 | Validation | `uv sync --all-extras --dev`, `maturin develop` with the `python` feature, and pytest run documented (and added to CI if feasible) | Workflow documented in README; manual run confirmed via uv + maturin develop + pytest | ✅ Done |
 | P2 | Future API expansion | Follow-up spec to design kernel function exports, error mapping, and data model | Defer until kernels stabilize | ⏸️ Deferred |
 
@@ -38,7 +38,7 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 
 ### Risks & Mitigations
 
-- **Risk:** Module naming drifts from `geodist._geodist_rs`. **Mitigation:** Keep the module path stable and update dependent docs/tests immediately if a rename is required.
+- **Risk:** Module naming drifts from `loxodrome._loxodrome_rs`. **Mitigation:** Keep the module path stable and update dependent docs/tests immediately if a rename is required.
 - **Risk:** Maturin conflicts with `uv-dynamic-versioning` or pinned toolchains. **Mitigation:** Verify backend compatibility before switching and document any required pin updates.
 - **Risk:** Need to split bindings into a dedicated crate later. **Mitigation:** Keep PyO3 behind a feature flag and design wiring so manifest paths are easy to relocate.
 

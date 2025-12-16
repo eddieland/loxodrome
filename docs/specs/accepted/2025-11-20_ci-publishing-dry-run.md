@@ -10,7 +10,7 @@
 ## Guiding Constraints
 
 - Default to dry-run: build all artifacts and run `cargo publish --dry-run` / `maturin build` without uploading until explicitly flipped.
-- Respect pinned toolchains and existing Make targets; avoid ad-hoc scripts that diverge from `pygeodist`/`geodist-rs` configs.
+- Respect pinned toolchains and existing Make targets; avoid ad-hoc scripts that diverge from `loxodrome`/`loxodrome-rs` configs.
 - GitHub Actions only; no self-hosted runners required. Matrix should cover target wheels we plan to ship but must remain time-bounded.
 - Secrets-free dry run: workflows must succeed without registry tokens; uploads only happen when toggled and tokens are provided.
 - Releases triggered from signed/tagged versions; no branch publishes.

@@ -1,4 +1,4 @@
-# Geodist Style Guide
+# Loxodrome Style Guide
 
 - Purpose: quick reference distilled from AGENTS.md, repo configs, and tool defaults.
 
@@ -6,8 +6,8 @@
 
 - Line length 120; docstring code blocks target 88 characters.
 - Python format via `ruff format` (Black rules): double quotes, spaces for indent, keep trailing commas, LF endings.
-- Python lint via `ruff check --fix` with Google docstrings; run `make fmt` or `make lint` from `pygeodist`.
-- Rust format via `cargo fmt`; Clippy fixes allowed in `make fmt` under `geodist-rs`.
+- Python lint via `ruff check --fix` with Google docstrings; run `make fmt` or `make lint` from `loxodrome`.
+- Rust format via `cargo fmt`; Clippy fixes allowed in `make fmt` under `loxodrome-rs`.
 
 ## Python Style
 
@@ -17,13 +17,13 @@
 - Docstrings: add for public or non-obvious items; use Google style; skip trivial data holders/pass-throughs.
 - Attributes (including module constants): document with Sphinx-style `#: ...` comments so autodoc captures them.
 - Layout: put public API objects at the top of each `.py` file and follow with `_private` helpers to keep important entry points obvious.
-- Types first: prefer explicit return/arg types; keep `pygeodist/src/geodist/_geodist_rs.pyi` in sync with Rust exports.
-- Tests live in `pygeodist/tests` mirroring package layout; name `test_*`; favor descriptive asserts and regressions.
-- Commands: `uv sync --all-extras` to set up; `make fmt`, `make lint`, `make test`, `make build` within `pygeodist`.
+- Types first: prefer explicit return/arg types; keep `loxodrome/src/loxodrome/_loxodrome_rs.pyi` in sync with Rust exports.
+- Tests live in `loxodrome/tests` mirroring package layout; name `test_*`; favor descriptive asserts and regressions.
+- Commands: `uv sync --all-extras` to set up; `make fmt`, `make lint`, `make test`, `make build` within `loxodrome`.
 
 ## Rust Style
 
-- Toolchain pinned to nightly with rustfmt/clippy/rust-src/llvm-tools (see `geodist-rs/rust-toolchain.toml`).
+- Toolchain pinned to nightly with rustfmt/clippy/rust-src/llvm-tools (see `loxodrome-rs/rust-toolchain.toml`).
 - Naming: snake_case for functions/vars, CamelCase for types/traits; prefer small modules and explicit imports.
 - Documentation: use RustDoc on public items and `unsafe` blocks; describe args, returns, panics/errors, invariants; include `# Safety` when needed.
 - Commands: `make fmt` (rustfmt + clippy --fix), `make lint` (clippy -D warnings), `make test` (cargo nextest).

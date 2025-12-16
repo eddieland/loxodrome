@@ -23,8 +23,8 @@ def main() -> int:
         return 1
 
     repo_root = discover_repo_root()
-    manifest_cargo = repo_root / "geodist-rs" / "Cargo.toml"
-    manifest_py = repo_root / "pygeodist" / "pyproject.toml"
+    manifest_cargo = repo_root / "loxodrome-rs" / "Cargo.toml"
+    manifest_py = repo_root / "loxodrome" / "pyproject.toml"
 
     if not manifest_cargo.exists():
         sys.stderr.write(f"Missing Cargo manifest: {manifest_cargo}\n")
@@ -38,9 +38,9 @@ def main() -> int:
 
     errors: list[str] = []
     if cargo_version != release_version:
-        errors.append(f"geodist-rs version {cargo_version} does not match tag {release_version}")
+        errors.append(f"loxodrome-rs version {cargo_version} does not match tag {release_version}")
     if py_version != release_version:
-        errors.append(f"pygeodist version {py_version} does not match tag {release_version}")
+        errors.append(f"loxodrome version {py_version} does not match tag {release_version}")
 
     if errors:
         sys.stderr.write("\n".join(errors) + "\n")

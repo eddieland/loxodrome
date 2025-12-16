@@ -38,14 +38,14 @@
 ### Polyline Hausdorff + Chamfer APIs (P0)
 
 - Python shape (public API):
-  - `geodist.hausdorff(polyline_a, polyline_b, *, symmetric=True, bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
-  - `geodist.chamfer(polyline_a, polyline_b, *, symmetric=True, reduction="mean", bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
+  - `loxodrome.hausdorff(polyline_a, polyline_b, *, symmetric=True, bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
+  - `loxodrome.chamfer(polyline_a, polyline_b, *, symmetric=True, reduction="mean", bbox=None, max_segment_length_m=100.0, max_segment_angle_deg=0.1, sample_cap=50_000, return_witness=False) -> float | tuple[float, Witness]`.
   - `polyline_*` accept `LineString` or `MultiLineString`-shaped inputs (array-likes or shapely/geojson-compatible tuples). Require at least one densification knob. `symmetric=False` computes the directed A→B variant.
 - Rust shape (crate API sketch):
   - `fn hausdorff_polyline(a: &Polyline, b: &Polyline, opts: HausdorffOpts) -> HausdorffResult;`
   - `fn chamfer_polyline(a: &Polyline, b: &Polyline, opts: ChamferOpts) -> ChamferResult;`
   - Options mirror Python: `symmetric: bool`, `reduction: Reduction`, `bbox: Option<BoundingBox>`, densification knobs, `sample_cap`, and `return_witness` equivalent.
-- `_geodist_rs.pyi` witness typing: `class Witness(TypedDict)` with fields: `source_part: int`, `source_index: int`, `target_part: int`, `target_index: int`, `source_coord: tuple[float, float]`, `target_coord: tuple[float, float]`, `distance_m: float`.
+- `_loxodrome_rs.pyi` witness typing: `class Witness(TypedDict)` with fields: `source_part: int`, `source_index: int`, `target_part: int`, `target_index: int`, `source_coord: tuple[float, float]`, `target_coord: tuple[float, float]`, `distance_m: float`.
 - Witness emission rules:
   - Directed Hausdorff returns the farthest (max) distance sample in the A→B direction; symmetric picks the realizing witness from the worse direction (A→B if equal after distance tie-break below).
   - Chamfer only emits a witness when `reduction="max"` (otherwise aggregates distances without per-point payload). Witness schema matches Hausdorff; `distance_m` reflects the worst offending sample.
@@ -85,11 +85,11 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | Lock densification + validation for LineString/Polyline inputs | Defaults, bounds, and deterministic sampling order documented; sample-cap behavior called out with examples | Sets the first shippable surface | ✅ |
-| P0 | Specify Hausdorff + Chamfer APIs and witness payloads for polylines | Function signatures, reduction modes, tie-break rules, and `_geodist_rs.pyi` shape captured; matches current point Hausdorff contract | Enables early Rust/Python delivery on polylines | ✅ |
+| P0 | Specify Hausdorff + Chamfer APIs and witness payloads for polylines | Function signatures, reduction modes, tie-break rules, and `_loxodrome_rs.pyi` shape captured; matches current point Hausdorff contract | Enables early Rust/Python delivery on polylines | ✅ |
 | P0 | Add end-to-end MultiLineString acceptance | Validation + sampling rules defined; witness shape records part indices; tests/fixtures sketched for LineString + MultiLineString parity | Delivers the first “additional data type” increment | ✅ |
 | P0 | Define clipping behavior for polyline metrics | Bbox rules, antimeridian handling, and empty-geometry failures documented with examples | Keeps first wave auditable | ✅ |
 | P1 | Ring validation + densification for Polygon/MultiPolygon (boundary-only) | Closure/orientation/containment checks and sampling defaults captured; explicit note that interior coverage is deferred | Unblocks perimeter-only distances as a second increment | ✅ |
-| P1 | Polygon boundary Hausdorff/Chamfer witness + API shape | Witness payloads and tie-breaks defined; `_geodist_rs.pyi` updates described; fixtures outlined | Builds on polyline work before interior fill | ✅ |
+| P1 | Polygon boundary Hausdorff/Chamfer witness + API shape | Witness payloads and tie-breaks defined; `_loxodrome_rs.pyi` updates described; fixtures outlined | Builds on polyline work before interior fill | ✅ |
 | P1 | Draft polyline-focused test matrix | Golden cases for multi-part polylines, crossing lines, and clipped evaluations; tolerances stated | Guards early delivery | 📝 |
 | P2 | Extend to interior coverage grids + Fréchet semantics across polygons | Grid seeding and Fréchet traversal rules documented; perf/complexity notes updated | Activates filled-area accuracy | 📝 |
 | P2 | Performance + memory targets | Sampling defaults justified with complexity bounds; profiling plan outlined | Adjust after initial benchmarks | 📝 |

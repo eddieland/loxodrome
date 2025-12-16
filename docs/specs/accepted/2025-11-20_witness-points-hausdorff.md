@@ -14,7 +14,7 @@
 - Maintain lat/lon `_deg` naming and validation rules; clipping continues to use latitude/longitude only (even for 3D).
 - Keep performance guardrails: indexed vs naive switch stays; witness reporting must not regress small-set performance materially.
 - Propagate clear errors for empty sets and fully clipped sets; witness indices must map back to the provided iterable order.
-- Update PyO3 stub typings (`_geodist_rs.pyi`) alongside Rust exports; Python public API stays snake_case with typed returns.
+- Update PyO3 stub typings (`_loxodrome_rs.pyi`) alongside Rust exports; Python public API stays snake_case with typed returns.
 
 ## Target Capabilities
 
@@ -34,7 +34,7 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | Define Rust return structs/enums for witness output across 2D, 3D, and clipped Hausdorff | Chosen shape (e.g., `HausdorffWitness { distance_m, a_idx, b_idx }`, symmetric returns both directions) documented with RustDoc | Decide whether symmetric returns two structs or a combined type; confirm index semantics post-clipping | ✅ Done |
 | P0 | Implement witness-capable kernels in Rust | All Hausdorff paths (directed/symmetric, clipped/unclipped, 3D) compute witness pair and return typed result; errors for empty/fully clipped sets; tests added | Keep indexed vs naive strategy; ensure clipped paths track source indices | ✅ Done |
-| P0 | Expose witness outputs through PyO3 and update `_geodist_rs.pyi` | PyO3 module exports new witness-returning functions/structs; stub updated; Python type hints align | Decide Python result type (frozen dataclass or NamedTuple); adjust existing helpers if that yields a better API | ✅ Done |
+| P0 | Expose witness outputs through PyO3 and update `_loxodrome_rs.pyi` | PyO3 module exports new witness-returning functions/structs; stub updated; Python type hints align | Decide Python result type (frozen dataclass or NamedTuple); adjust existing helpers if that yields a better API | ✅ Done |
 | P1 | Add Python-side tests and docs | Pytest coverage for witness returns across variants; README + notebook mention how to access witnesses | Include negative cases (empty, fully clipped) and ensure indices match original iterable order | ✅ Done |
 | P2 | Performance validation | Bench comparisons showing negligible overhead on small sets and acceptable overhead on large sets with indexing | Add micro-bench or reuse existing Criterion harness; document findings | 📝 |
 | P3 | Optional: expose witness point coordinates directly in Python convenience layer | Helper that maps indices back to `Point`/`Point3D` objects for ergonomic use | Only if not too costly; otherwise document how to reconstruct manually | ⏸️ |

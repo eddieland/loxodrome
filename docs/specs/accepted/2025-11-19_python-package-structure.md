@@ -10,10 +10,10 @@
 
 ## Guiding Constraints
 
-- Keep `_geodist_rs` private and map it to a minimal public API; expose Rust geometry structs directly (opaque handles) with lightweight Python wrappers for typing and convenience.
+- Keep `_loxodrome_rs` private and map it to a minimal public API; expose Rust geometry structs directly (opaque handles) with lightweight Python wrappers for typing and convenience.
 - Prefer explicit geometry structs over free-form tuples so we can evolve kernels without breaking positional contracts; keep constructors simple and validated.
 - Shapely interop is optional and isolated: helpers live in a small module, imports are guarded, and conversions are explicit.
-- Strict typing and docs remain required; keep `_geodist_rs.pyi` in sync with compiled symbols and include Rust-backed geometry classes.
+- Strict typing and docs remain required; keep `_loxodrome_rs.pyi` in sync with compiled symbols and include Rust-backed geometry classes.
 - CLI remains a dev-only helper and must not imply capabilities that the Rust layer does not provide.
 
 ## Target Capabilities
@@ -35,8 +35,8 @@ Use emoji for status (e.g., ✅ done, 🚧 in progress, 📝 planned, ⏸️ def
 | Priority | Task | Definition of Done | Notes | Status |
 | -------- | ---- | ------------------ | ----- | ------ |
 | P0 | Rewrite public API scope doc and `__all__` to reflect the minimal surface (constants, errors, Rust-backed geometry wrappers). | README and docstrings describe the small API; no promises of Shapely breadth. | Aligns consumer expectations with reality. | ✅ |
-| P0 | Define Rust-backed geometry wrappers and constructors. | `_geodist_rs.pyi` exposes core structs; Python wrappers validate inputs and keep immutability; no Shapely dependency. | Keeps typing ready while matching Rust models. | ✅ |
-| P1 | Ship optional Shapely conversion helpers and verify packaging/CLI alignment. | `geodist.ext.shapely` converts to/from wrappers (guarded imports, skipped tests when missing); packaging keeps deps lean; CLI reflects the limited API. | Bundles small tasks to avoid churn. | ✅ |
+| P0 | Define Rust-backed geometry wrappers and constructors. | `_loxodrome_rs.pyi` exposes core structs; Python wrappers validate inputs and keep immutability; no Shapely dependency. | Keeps typing ready while matching Rust models. | ✅ |
+| P1 | Ship optional Shapely conversion helpers and verify packaging/CLI alignment. | `loxodrome.ext.shapely` converts to/from wrappers (guarded imports, skipped tests when missing); packaging keeps deps lean; CLI reflects the limited API. | Bundles small tasks to avoid churn. | ✅ |
 | P2 | Document non-goals and future kernel exposures without promising timelines. | README states Shapely parity is out of scope; guidance for interop users; backlog of candidate functions gated on Rust readiness. | Reduces support burden and avoids churn. | ✅ |
 
 _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
@@ -44,7 +44,7 @@ _Add or remove rows as necessary while keeping priorities sorted (P0 highest)._
 ### Risks & Mitigations
 
 - **Risk:** Overpromising capabilities leads users to expect Shapely-like breadth. **Mitigation:** Keep docs and `__all__` minimal; explicitly list non-goals.
-- **Risk:** Divergence between `_geodist_rs` and `_geodist_rs.pyi` once functions/structs arrive. **Mitigation:** Block merges on updating stubs and adding smoke tests for each exported symbol.
+- **Risk:** Divergence between `_loxodrome_rs` and `_loxodrome_rs.pyi` once functions/structs arrive. **Mitigation:** Block merges on updating stubs and adding smoke tests for each exported symbol.
 - **Risk:** Shapely conversions hide unsupported geometry kinds. **Mitigation:** Validate and error loudly for unsupported types; keep compatibility tests minimal and explicit.
 - **Risk:** CLI implies broader features. **Mitigation:** Wire CLI to current exports only and exit with clear messaging when extension is absent.
 

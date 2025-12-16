@@ -1,7 +1,7 @@
 [project]
-name = "geodist-experiments"
+name = "loxodrome-experiments"
 version = "0.0.0"
-description = "Experimentation, benchmarks, notebooks, and visualizations for geodist development."
+description = "Experimentation, benchmarks, notebooks, and visualizations for loxodrome development."
 readme = "README.md"
 authors = [
     { name = "Edward Jones", email = "e@eddie.land" }
@@ -13,7 +13,7 @@ dependencies = [
     "matplotlib>=3.8",
     "numpy>=2,<3",
     "pydantic>=2.9,<3",
-    "pygeodist",
+    "loxodrome",
     "shapely>=2.0,<3.0",
 ]
 
@@ -35,7 +35,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-pygeodist = { path = "../pygeodist", editable = true }
+loxodrome = { path = "../loxodrome", editable = true }
 
 [build-system]
 requires = ["hatchling"]

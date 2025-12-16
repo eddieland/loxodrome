@@ -2,14 +2,14 @@
 
 - Workflow: `.github/workflows/release.yml` triggers on tags matching `vMAJOR.MINOR.PATCH` and defaults to dry-run.
 - Gates: runs Python lint/tests (`make lint`, `make test`) and Rust fmt/clippy/tests before any packaging starts.
-- Outputs in dry-run: cargo publish dry-run builds `geodist-rs` and uploads the crate tarball; `maturin build` builds wheels across Linux/macos/Windows (x86_64 + macOS aarch64) for Python 3.10 and 3.12, plus an sdist from Linux.
+- Outputs in dry-run: cargo publish dry-run builds `loxodrome-rs` and uploads the crate tarball; `maturin build` builds wheels across Linux/macos/Windows (x86_64 + macOS aarch64) for Python 3.10 and 3.12, plus an sdist from Linux.
 
 ## Cutting a dry-run release
 
-1. Ensure versions match: bump `geodist-rs/Cargo.toml` and `pygeodist/pyproject.toml` to the same value.
+1. Ensure versions match: bump `loxodrome-rs/Cargo.toml` and `loxodrome/pyproject.toml` to the same value.
 2. Tag the release: `git tag -s v0.1.0 && git push origin v0.1.0` (re-sign if you prefer lightweight tags).
 3. Inspect artifacts in the run named `Release Publishing (dry-run default)`:
-   - `geodist-rs-crate`: cargo-produced `.crate` tarball (from `cargo publish --dry-run`).
+   - `loxodrome-rs-crate`: cargo-produced `.crate` tarball (from `cargo publish --dry-run`).
    - `python-wheels-*`: platform wheels and the Linux-built sdist.
 4. Optionally exercise a wheel locally by downloading the artifact and installing with `pip install dist/<wheel>` to sanity-check metadata and importability.
 
