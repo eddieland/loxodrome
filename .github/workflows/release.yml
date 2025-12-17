@@ -186,9 +186,9 @@ jobs:
         with:
           workspaces: "loxodrome-rs -> target"
 
-      - name: Cargo publish dry-run
+      - name: Cargo package
         working-directory: loxodrome-rs
-        run: cargo publish --locked --dry-run
+        run: cargo package --locked
 
       - name: Upload crate artifact
         uses: actions/upload-artifact@v4
