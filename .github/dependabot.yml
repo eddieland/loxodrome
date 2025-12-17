@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directory: "/"
+    directory: "/loxodrome-rs"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -23,6 +23,11 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
         
+  - package-ecosystem: "pip"
+    directory: "/loxodrome"
+    schedule:
+      interval: "weekly"
+      
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
