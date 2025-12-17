@@ -112,7 +112,7 @@ jobs:
           echo "dir=${dir}" >> "${GITHUB_OUTPUT}"
 
       - name: Cache uv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.uv-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-uv-release-${{ hashFiles('loxodrome/pyproject.toml', 'loxodrome/uv.lock') }}
