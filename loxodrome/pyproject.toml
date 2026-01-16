@@ -47,6 +47,7 @@ dev = [
     "rich>=14.0.0",
     "ruff>=0.14.6",
     "shapely>=2.0,<3.0",
+    "ty>=0.1.0",
     "typer>=0.15.0",
     "types-shapely>=2.1.0.20250917",
 ]
@@ -72,3 +73,10 @@ error_summary = true
 pretty = true
 show_error_codes = true
 warn_unused_configs = true
+
+[tool.ty]
+python_version = "3.10"
+strict = true
+files = ["src", "tests"]
+color = true
+pretty = true
