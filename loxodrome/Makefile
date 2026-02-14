@@ -23,10 +23,11 @@ install: ## Install the project's dependencies with uv (**including all extras a
 
 .PHONY: lint
 lint: ## Run linters, formatters, and type checks
-	uv run codespell --write-changes $(SOURCE_DIRS) $(DOC_FILES)
-	uv run ruff check --fix $(SOURCE_DIRS)
-	uv run ruff format $(SOURCE_DIRS)
-	uv run mypy $(SOURCE_DIRS)
+        uv run codespell --write-changes $(SOURCE_DIRS) $(DOC_FILES)
+        uv run ruff check --fix $(SOURCE_DIRS)
+        uv run ruff format $(SOURCE_DIRS)
+        uv run mypy $(SOURCE_DIRS)
+        uv run ty --config-file pyproject.toml $(SOURCE_DIRS)
 
 .PHONY: test
 test: ## Run tests
