@@ -39,7 +39,7 @@ vectorized = ["numpy>=1.24"]
 [dependency-groups]
 dev = [
     "codespell>=2.4.1",
-    "maturin>=1.10,<1.12",
+    "maturin>=1.10,<1.13",
     "mypy>=1.14.1",
     "numpy>=2,<3",
     "pytest-sugar>=1.0.0",
@@ -54,7 +54,7 @@ dev = [
 # ---- Build system ----
 
 [build-system]
-requires = ["maturin>=1.10,<1.12"]
+requires = ["maturin>=1.10,<1.13"]
 build-backend = "maturin"
 
 [tool.maturin]
