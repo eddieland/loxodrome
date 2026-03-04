@@ -191,7 +191,7 @@ jobs:
         run: cargo package --locked
 
       - name: Upload crate artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: loxodrome-rs-crate
           path: loxodrome-rs/target/package/*.crate
@@ -306,7 +306,7 @@ jobs:
             --interpreter python
 
       - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: python-wheels-${{ matrix.os }}-${{ matrix.target }}-py${{ matrix.python-version }}
           path: |
